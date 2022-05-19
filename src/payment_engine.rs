@@ -1,14 +1,11 @@
 use crate::{account::Account, transaction::Transaction};
 use std::collections::{hash_map::Entry, HashMap};
 
-fn process(transactions: &[Transaction]) -> Result<HashMap<u16, Account>, anyhow::Error> {
+pub fn process(transactions: &[Transaction]) -> Result<HashMap<u16, Account>, anyhow::Error> {
     let mut accounts: HashMap<u16, Account> = HashMap::new();
 
     // Process transactions in chronological order
     for transaction in transactions {
-        // TODO: remove print
-        println!("{:#?}", transaction);
-
         match transaction {
             Transaction::Deposit(tx) => match accounts.entry(tx.client_id) {
                 Entry::Occupied(entry) => {
@@ -30,12 +27,11 @@ fn process(transactions: &[Transaction]) -> Result<HashMap<u16, Account>, anyhow
                     account.withdraw(tx)?
                 }
             },
+            // TODO: implement dispute, resolve, and chargeback transaction types
             _ => todo!(),
-        }
+        };
     }
 
-    // TODO: remove print
-    println!("accounts: {:#?}", accounts);
     Ok(accounts)
 }
 

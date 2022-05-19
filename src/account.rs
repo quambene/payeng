@@ -1,9 +1,13 @@
 // TODO: check decimal precision
 // TODO: implement new type pattern for client_id
 
-use crate::transaction::{
-    ChargebackError, ChargebackTransaction, DepositError, DepositTransaction, DisputeError,
-    DisputeTransaction, ResolveError, ResolveTransaction, WithdrawalError, WithdrawalTransaction,
+use crate::{
+    raw_account::RawAccount,
+    transaction::{
+        ChargebackError, ChargebackTransaction, DepositError, DepositTransaction, DisputeError,
+        DisputeTransaction, ResolveError, ResolveTransaction, WithdrawalError,
+        WithdrawalTransaction,
+    },
 };
 
 #[derive(Debug, PartialEq)]
@@ -71,6 +75,18 @@ impl Account {
             todo!()
         } else {
             Err(ChargebackError::InvalidClientId)
+        }
+    }
+}
+
+impl From<Account> for RawAccount {
+    fn from(account: Account) -> RawAccount {
+        RawAccount {
+            client: account.client_id,
+            available: account.available_amount,
+            held: account.held_amount,
+            total: account.total_amount,
+            locked: account.is_locked,
         }
     }
 }
