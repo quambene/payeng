@@ -1,64 +1,76 @@
 // TODO: check decimal precision
 // TODO: implement new type pattern for client_id
 
-use crate::{
-    errors::{DepositError, WithdrawalError},
-    transaction::{Transaction, TransactionType},
+use crate::transaction::{
+    ChargebackError, ChargebackTransaction, DepositError, DepositTransaction, DisputeError,
+    DisputeTransaction, ResolveError, ResolveTransaction, WithdrawalError, WithdrawalTransaction,
 };
 
 #[derive(Debug, PartialEq)]
 pub struct Account {
     client_id: u16,
-    available: f64,
-    held: f64,
-    total: f64,
+    available_amount: f64,
+    held_amount: f64,
+    total_amount: f64,
     is_locked: bool,
 }
 
-// TODO: implement dispute, resolve
-// TODO: consider using  std::Error or thiserror instead of anyhow
 impl Account {
     pub fn new(client_id: u16) -> Self {
         Self {
             client_id,
-            available: 0.0,
-            held: 0.0,
-            total: 0.0,
+            available_amount: 0.0,
+            held_amount: 0.0,
+            total_amount: 0.0,
             is_locked: false,
         }
     }
 
-    pub fn deposit(&mut self, tx: &Transaction) -> Result<(), DepositError> {
-        match tx.tx_type {
-            TransactionType::Deposit => {
-                if tx.client_id == self.client_id {
-                    self.available = self.available + tx.amount;
-                    self.total = self.total + tx.amount;
-                    Ok(())
-                } else {
-                    Err(DepositError::InvalidClientId)
-                }
-            }
-            _ => Err(DepositError::InvalidTransactionType),
+    pub fn deposit(&mut self, tx: &DepositTransaction) -> Result<(), DepositError> {
+        if self.client_id == tx.client_id {
+            self.available_amount = self.available_amount + tx.amount;
+            self.total_amount = self.total_amount + tx.amount;
+            Ok(())
+        } else {
+            Err(DepositError::InvalidClientId)
         }
     }
 
-    pub fn withdraw(&mut self, tx: &Transaction) -> Result<(), WithdrawalError> {
-        match tx.tx_type {
-            TransactionType::Withdrawal => {
-                if tx.client_id == self.client_id {
-                    if self.available - tx.amount >= 0.0 {
-                        self.available = self.available - tx.amount;
-                        self.total = self.total - tx.amount;
-                        Ok(())
-                    } else {
-                        Err(WithdrawalError::InsufficientFunds)
-                    }
-                } else {
-                    Err(WithdrawalError::InvalidClientId)
-                }
+    pub fn withdraw(&mut self, tx: &WithdrawalTransaction) -> Result<(), WithdrawalError> {
+        if self.client_id == tx.client_id {
+            if self.available_amount - tx.amount >= 0.0 {
+                self.available_amount = self.available_amount - tx.amount;
+                self.total_amount = self.total_amount - tx.amount;
+                Ok(())
+            } else {
+                Err(WithdrawalError::InsufficientFunds)
             }
-            _ => Err(WithdrawalError::InvalidTransactionType),
+        } else {
+            Err(WithdrawalError::InvalidClientId)
+        }
+    }
+
+    pub fn dispute(&mut self, tx: &DisputeTransaction) -> Result<(), DisputeError> {
+        if self.client_id == tx.client_id {
+            todo!()
+        } else {
+            Err(DisputeError::InvalidClientId)
+        }
+    }
+
+    pub fn resolve(&mut self, tx: &ResolveTransaction) -> Result<(), ResolveError> {
+        if self.client_id == tx.client_id {
+            todo!()
+        } else {
+            Err(ResolveError::InvalidClientId)
+        }
+    }
+
+    pub fn chargeback(&mut self, tx: &ChargebackTransaction) -> Result<(), ChargebackError> {
+        if self.client_id == tx.client_id {
+            todo!()
+        } else {
+            Err(ChargebackError::InvalidClientId)
         }
     }
 }
@@ -75,9 +87,9 @@ mod tests {
             account,
             Account {
                 client_id,
-                available: 0.0,
-                held: 0.0,
-                total: 0.0,
+                available_amount: 0.0,
+                held_amount: 0.0,
+                total_amount: 0.0,
                 is_locked: false
             }
         )
@@ -87,7 +99,7 @@ mod tests {
     fn test_deposit() {
         let client_id = 1;
         let mut account = Account::new(client_id);
-        let transaction = Transaction::new(TransactionType::Deposit, client_id, 1, 25.0);
+        let transaction = DepositTransaction::new(client_id, 1, 25.0);
         let res = account.deposit(&transaction);
 
         assert!(res.is_ok());
@@ -95,31 +107,18 @@ mod tests {
             account,
             Account {
                 client_id,
-                available: 25.0,
-                held: 0.0,
-                total: 25.0,
+                available_amount: 25.0,
+                held_amount: 0.0,
+                total_amount: 25.0,
                 is_locked: false
             }
         );
     }
 
     #[test]
-    fn test_deposit_invalid_transaction_type() {
-        let client_id = 1;
-        let mut account = Account::new(client_id);
-        let transaction = Transaction::new(TransactionType::Withdrawal, client_id, 1, 25.0);
-
-        let res = account.deposit(&transaction);
-        assert!(res.is_err());
-
-        let err = res.unwrap_err();
-        assert!(matches!(err, DepositError::InvalidTransactionType));
-    }
-
-    #[test]
     fn test_deposit_invalid_client_id() {
         let mut account = Account::new(1);
-        let transaction = Transaction::new(TransactionType::Deposit, 2, 1, 25.0);
+        let transaction = DepositTransaction::new(2, 1, 25.0);
 
         let res = account.deposit(&transaction);
         assert!(res.is_err());
@@ -132,9 +131,8 @@ mod tests {
     fn test_withdraw() {
         let client_id = 1;
         let mut account = Account::new(client_id);
-        let deposit_transaction = Transaction::new(TransactionType::Deposit, client_id, 1, 25.0);
-        let withdrawal_transaction =
-            Transaction::new(TransactionType::Withdrawal, client_id, 1, 15.0);
+        let deposit_transaction = DepositTransaction::new(client_id, 1, 25.0);
+        let withdrawal_transaction = WithdrawalTransaction::new(client_id, 1, 15.0);
 
         let res = account.deposit(&deposit_transaction);
         assert!(res.is_ok());
@@ -146,9 +144,9 @@ mod tests {
             account,
             Account {
                 client_id,
-                available: 10.0,
-                held: 0.0,
-                total: 10.0,
+                available_amount: 10.0,
+                held_amount: 0.0,
+                total_amount: 10.0,
                 is_locked: false
             }
         );
@@ -158,7 +156,7 @@ mod tests {
     fn test_withdraw_insufficient_funds() {
         let client_id = 1;
         let mut account = Account::new(client_id);
-        let transaction = Transaction::new(TransactionType::Withdrawal, client_id, 1, 25.0);
+        let transaction = WithdrawalTransaction::new(client_id, 1, 25.0);
 
         let res = account.withdraw(&transaction);
         assert!(res.is_err());
@@ -168,22 +166,9 @@ mod tests {
     }
 
     #[test]
-    fn test_withdraw_invalid_transaction_type() {
-        let client_id = 1;
-        let mut account = Account::new(client_id);
-        let transaction = Transaction::new(TransactionType::Deposit, client_id, 1, 15.0);
-
-        let res = account.withdraw(&transaction);
-        assert!(res.is_err());
-
-        let err = res.unwrap_err();
-        assert!(matches!(err, WithdrawalError::InvalidTransactionType));
-    }
-
-    #[test]
     fn test_withdraw_invalid_client_id() {
         let mut account = Account::new(1);
-        let transaction = Transaction::new(TransactionType::Withdrawal, 2, 1, 15.0);
+        let transaction = WithdrawalTransaction::new(2, 1, 15.0);
 
         let res = account.withdraw(&transaction);
         assert!(res.is_err());
