@@ -1,8 +1,10 @@
 // TODO: check decimal precision
 // TODO: implement new type pattern for client_id
 
-use crate::transaction::{Transaction, TransactionType};
-use anyhow::{anyhow, Error};
+use crate::{
+    errors::{DepositError, WithdrawalError},
+    transaction::{Transaction, TransactionType},
+};
 
 #[derive(Debug, PartialEq)]
 pub struct Account {
@@ -26,7 +28,7 @@ impl Account {
         }
     }
 
-    pub fn deposit(&mut self, tx: &Transaction) -> Result<(), Error> {
+    pub fn deposit(&mut self, tx: &Transaction) -> Result<(), DepositError> {
         match tx.tx_type {
             TransactionType::Deposit => {
                 if tx.client_id == self.client_id {
@@ -34,16 +36,14 @@ impl Account {
                     self.total = self.total + tx.amount;
                     Ok(())
                 } else {
-                    Err(anyhow!("Can't deposit transaction: invalid client id"))
+                    Err(DepositError::InvalidClientId)
                 }
             }
-            _ => Err(anyhow!(
-                "Can't deposit transaction: invalid transaction type"
-            )),
+            _ => Err(DepositError::InvalidTransactionType),
         }
     }
 
-    pub fn withdraw(&mut self, tx: &Transaction) -> Result<(), Error> {
+    pub fn withdraw(&mut self, tx: &Transaction) -> Result<(), WithdrawalError> {
         match tx.tx_type {
             TransactionType::Withdrawal => {
                 if tx.client_id == self.client_id {
@@ -52,15 +52,13 @@ impl Account {
                         self.total = self.total - tx.amount;
                         Ok(())
                     } else {
-                        Err(anyhow!("Can't withdraw transaction: insufficient funds"))
+                        Err(WithdrawalError::InsufficientFunds)
                     }
                 } else {
-                    Err(anyhow!("Can't withdraw transaction: invalid client id"))
+                    Err(WithdrawalError::InvalidClientId)
                 }
             }
-            _ => Err(anyhow!(
-                "Can't withdraw transaction: invalid transaction type"
-            )),
+            _ => Err(WithdrawalError::InvalidTransactionType),
         }
     }
 }
@@ -110,18 +108,24 @@ mod tests {
         let client_id = 1;
         let mut account = Account::new(client_id);
         let transaction = Transaction::new(TransactionType::Withdrawal, client_id, 1, 25.0);
-        let res = account.deposit(&transaction);
 
+        let res = account.deposit(&transaction);
         assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert!(matches!(err, DepositError::InvalidTransactionType));
     }
 
     #[test]
     fn test_deposit_invalid_client_id() {
         let mut account = Account::new(1);
         let transaction = Transaction::new(TransactionType::Deposit, 2, 1, 25.0);
-        let res = account.withdraw(&transaction);
 
+        let res = account.deposit(&transaction);
         assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert!(matches!(err, DepositError::InvalidClientId));
     }
 
     #[test]
@@ -155,27 +159,36 @@ mod tests {
         let client_id = 1;
         let mut account = Account::new(client_id);
         let transaction = Transaction::new(TransactionType::Withdrawal, client_id, 1, 25.0);
-        let res = account.withdraw(&transaction);
 
+        let res = account.withdraw(&transaction);
         assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert!(matches!(err, WithdrawalError::InsufficientFunds));
     }
 
     #[test]
     fn test_withdraw_invalid_transaction_type() {
         let client_id = 1;
         let mut account = Account::new(client_id);
-        let transaction = Transaction::new(TransactionType::Deposit, client_id, 1, 25.0);
-        let res = account.withdraw(&transaction);
+        let transaction = Transaction::new(TransactionType::Deposit, client_id, 1, 15.0);
 
+        let res = account.withdraw(&transaction);
         assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert!(matches!(err, WithdrawalError::InvalidTransactionType));
     }
 
     #[test]
     fn test_withdraw_invalid_client_id() {
         let mut account = Account::new(1);
-        let transaction = Transaction::new(TransactionType::Withdrawal, 2, 1, 25.0);
-        let res = account.deposit(&transaction);
+        let transaction = Transaction::new(TransactionType::Withdrawal, 2, 1, 15.0);
 
+        let res = account.withdraw(&transaction);
         assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert!(matches!(err, WithdrawalError::InvalidClientId));
     }
 }
