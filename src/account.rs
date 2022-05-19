@@ -47,9 +47,13 @@ impl Account {
         match tx.tx_type {
             TransactionType::Withdrawal => {
                 if tx.client_id == self.client_id {
-                    self.available = self.available - tx.amount;
-                    self.total = self.total - tx.amount;
-                    Ok(())
+                    if self.available - tx.amount >= 0.0 {
+                        self.available = self.available - tx.amount;
+                        self.total = self.total - tx.amount;
+                        Ok(())
+                    } else {
+                        Err(anyhow!("Can't withdraw transaction: insufficient funds"))
+                    }
                 } else {
                     Err(anyhow!("Can't withdraw transaction: invalid client id"))
                 }
@@ -124,20 +128,36 @@ mod tests {
     fn test_withdraw() {
         let client_id = 1;
         let mut account = Account::new(client_id);
-        let transaction = Transaction::new(TransactionType::Withdrawal, client_id, 1, 25.0);
-        let res = account.withdraw(&transaction);
+        let deposit_transaction = Transaction::new(TransactionType::Deposit, client_id, 1, 25.0);
+        let withdrawal_transaction =
+            Transaction::new(TransactionType::Withdrawal, client_id, 1, 15.0);
 
+        let res = account.deposit(&deposit_transaction);
         assert!(res.is_ok());
+
+        let res = account.withdraw(&withdrawal_transaction);
+        assert!(res.is_ok());
+
         assert_eq!(
             account,
             Account {
                 client_id,
-                available: -25.0,
+                available: 10.0,
                 held: 0.0,
-                total: -25.0,
+                total: 10.0,
                 is_locked: false
             }
         );
+    }
+
+    #[test]
+    fn test_withdraw_insufficient_funds() {
+        let client_id = 1;
+        let mut account = Account::new(client_id);
+        let transaction = Transaction::new(TransactionType::Withdrawal, client_id, 1, 25.0);
+        let res = account.withdraw(&transaction);
+
+        assert!(res.is_err());
     }
 
     #[test]
