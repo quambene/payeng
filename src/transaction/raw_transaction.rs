@@ -1,4 +1,5 @@
 
+#[derive(Debug)]
 pub struct RawTransaction {
     pub tx_type: String,
     pub client_id: u16,

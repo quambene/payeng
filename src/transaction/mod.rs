@@ -12,6 +12,16 @@ pub use errors::{ChargebackError, DepositError, DisputeError, ResolveError, With
 pub use resolve_transaction::ResolveTransaction;
 pub use withdrawal_transaction::WithdrawalTransaction;
 
+#[derive(Debug)]
+pub enum Transaction {
+    Deposit(DepositTransaction),
+    Withdrawal(WithdrawalTransaction),
+    Dispute(DisputeTransaction),
+    Resolve(ResolveTransaction),
+    Chargeback(ChargebackTransaction),
+}
+
+#[derive(Debug)]
 pub enum TransferTransaction {
     Deposit(DepositTransaction),
     Withdrawal(WithdrawalTransaction),

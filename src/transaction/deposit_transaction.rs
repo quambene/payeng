@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct DepositTransaction {
     pub client_id: u16,
     pub transaction_id: u32,

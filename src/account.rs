@@ -8,11 +8,11 @@ use crate::transaction::{
 
 #[derive(Debug, PartialEq)]
 pub struct Account {
-    client_id: u16,
-    available_amount: f64,
-    held_amount: f64,
-    total_amount: f64,
-    is_locked: bool,
+    pub client_id: u16,
+    pub available_amount: f64,
+    pub held_amount: f64,
+    pub total_amount: f64,
+    pub is_locked: bool,
 }
 
 impl Account {
