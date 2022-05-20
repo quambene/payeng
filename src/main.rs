@@ -11,6 +11,7 @@ use transaction::Transaction;
 // TODO: Write error messages of main() to stdout
 // TODO: Write test for different input files (with and without spaces)
 fn main() -> anyhow::Result<()> {
+    // Parse the command line arguments; the first argument is the path to the input csv file
     let args: Vec<String> = env::args().collect();
     let csv_file = &args[1];
 
@@ -19,11 +20,18 @@ fn main() -> anyhow::Result<()> {
         .trim(csv::Trim::All)
         .from_path(csv_file)?;
 
-    // Prepare csv writer and write csv records to stdout
+    // Prepare csv writer and configure to write csv records to stdout
     let mut csv_writer = csv::Writer::from_writer(io::stdout());
+
+    // Try to parse the complete CSV file at first; if an error occurs don't start processing and abort instead
+    for res in csv_reader.deserialize() {
+        let raw_transaction: RawTransaction = res?;
+        let _transaction: Transaction = raw_transaction.try_into()?;
+    }
 
     let mut transactions: Vec<Transaction> = vec![];
 
+    // Process all transactions (if complete CSV file was parsed correctly)
     for res in csv_reader.deserialize() {
         let raw_transaction: RawTransaction = res?;
         let transaction: Transaction = raw_transaction.try_into()?;

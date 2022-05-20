@@ -1,8 +1,14 @@
-use super::TransferTransaction;
-
 #[derive(Debug)]
 pub struct DisputeTransaction {
     pub client_id: u16,
     pub transaction_id: u32,
-    pub transaction: TransferTransaction,
+}
+
+impl DisputeTransaction {
+    pub fn new(client_id: u16, transaction_id: u32) -> Self {
+        Self {
+            client_id,
+            transaction_id,
+        }
+    }
 }
