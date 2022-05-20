@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
                 tx.amount.unwrap(),
             ))),
             x => {
-                return Err(anyhow!("Transaction type {} not supported", x));
+                return Err(anyhow!("Transaction type '{}' not supported", x));
             }
         })
         .collect();
