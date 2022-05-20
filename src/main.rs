@@ -10,12 +10,17 @@ use std::{env, io};
 use transaction::{DepositTransaction, Transaction, WithdrawalTransaction};
 
 // TODO: Write error messages of main() to stdout
-// TODO: Test different input files (with and without spaces)
+// TODO: Write test for different input files (with and without spaces)
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().collect();
     let csv_file = &args[1];
 
-    let mut csv_reader = csv::Reader::from_path(csv_file)?;
+    // Prepare csv reader and remove/ignore all whitespaces
+    let mut csv_reader = csv::ReaderBuilder::new()
+        .trim(csv::Trim::All)
+        .from_path(csv_file)?;
+
+    // Prepare csv writer and write csv records to stdout
     let mut csv_writer = csv::Writer::from_writer(io::stdout());
 
     let mut raw_transactions: Vec<RawTransaction> = vec![];
