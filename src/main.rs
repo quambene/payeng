@@ -1,10 +1,12 @@
 mod account;
+mod errors;
 mod payment_engine;
 mod raw_account;
+mod raw_transaction;
 mod transaction;
 
 use crate::raw_account::RawAccount;
-use crate::transaction::RawTransaction;
+use crate::raw_transaction::RawTransaction;
 use std::{env, io};
 use transaction::Transaction;
 

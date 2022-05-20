@@ -1,13 +1,16 @@
-use crate::{account::Account, transaction::Transaction};
+use crate::{
+    account::Account,
+    transaction::{Transaction, TransactionType},
+};
 use std::collections::{hash_map::Entry, HashMap};
 
 pub fn process(transactions: &[Transaction]) -> Result<HashMap<u16, Account>, anyhow::Error> {
     let mut accounts: HashMap<u16, Account> = HashMap::new();
 
     // Process transactions in chronological order
-    for transaction in transactions {
-        match transaction {
-            Transaction::Deposit(tx) => match accounts.entry(tx.client_id) {
+    for tx in transactions {
+        match tx.tx_type {
+            TransactionType::Deposit => match accounts.entry(tx.client_id) {
                 Entry::Occupied(entry) => {
                     let account = entry.into_mut();
                     account.deposit(tx)?
@@ -17,7 +20,7 @@ pub fn process(transactions: &[Transaction]) -> Result<HashMap<u16, Account>, an
                     account.deposit(tx)?
                 }
             },
-            Transaction::Withdrawal(tx) => match accounts.entry(tx.client_id) {
+            TransactionType::Withdrawal => match accounts.entry(tx.client_id) {
                 Entry::Occupied(entry) => {
                     let account = entry.into_mut();
                     account.withdraw(tx)?
@@ -27,8 +30,36 @@ pub fn process(transactions: &[Transaction]) -> Result<HashMap<u16, Account>, an
                     account.withdraw(tx)?
                 }
             },
-            // TODO: implement dispute, resolve, and chargeback transaction types
-            _ => todo!(),
+            TransactionType::Dispute => match accounts.entry(tx.client_id) {
+                Entry::Occupied(entry) => {
+                    let account = entry.into_mut();
+                    account.dispute(tx, &transactions)?
+                }
+                Entry::Vacant(entry) => {
+                    let account = entry.insert(Account::new(tx.client_id));
+                    account.dispute(tx, &transactions)?
+                }
+            },
+            TransactionType::Resolve => match accounts.entry(tx.client_id) {
+                Entry::Occupied(entry) => {
+                    let account = entry.into_mut();
+                    account.resolve(tx, &transactions)?
+                }
+                Entry::Vacant(entry) => {
+                    let account = entry.insert(Account::new(tx.client_id));
+                    account.resolve(tx, &transactions)?
+                }
+            },
+            TransactionType::Chargeback => match accounts.entry(tx.client_id) {
+                Entry::Occupied(entry) => {
+                    let account = entry.into_mut();
+                    account.chargeback(tx, &transactions)?
+                }
+                Entry::Vacant(entry) => {
+                    let account = entry.insert(Account::new(tx.client_id));
+                    account.chargeback(tx, &transactions)?
+                }
+            },
         };
     }
 
@@ -37,18 +68,16 @@ pub fn process(transactions: &[Transaction]) -> Result<HashMap<u16, Account>, an
 
 #[cfg(test)]
 mod tests {
-    use crate::transaction::{DepositTransaction, WithdrawalTransaction};
-
     use super::*;
 
     #[test]
     fn test_process() {
         let transactions = vec![
-            Transaction::Deposit(DepositTransaction::new(1, 1, 1.0)),
-            Transaction::Deposit(DepositTransaction::new(2, 2, 2.0)),
-            Transaction::Deposit(DepositTransaction::new(1, 3, 2.0)),
-            Transaction::Withdrawal(WithdrawalTransaction::new(1, 4, 1.5)),
-            Transaction::Withdrawal(WithdrawalTransaction::new(2, 5, 2.0)),
+            Transaction::new(TransactionType::Deposit, 1, 1, Some(1.0)),
+            Transaction::new(TransactionType::Deposit, 2, 2, Some(2.0)),
+            Transaction::new(TransactionType::Deposit, 1, 3, Some(2.0)),
+            Transaction::new(TransactionType::Withdrawal, 1, 4, Some(1.5)),
+            Transaction::new(TransactionType::Withdrawal, 2, 5, Some(2.0)),
         ];
 
         let res = process(&transactions);
