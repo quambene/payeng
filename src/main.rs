@@ -8,10 +8,11 @@ use crate::transaction::RawTransaction;
 use std::{env, io};
 use transaction::Transaction;
 
-// TODO: Write error messages of main() to stdout
 // TODO: Write test for different input files (with and without spaces)
+
+// Errors are parsed to stderr (instead of stdout) via anyhow
 fn main() -> anyhow::Result<()> {
-    // Parse the command line arguments; the first argument is the path to the input csv file
+    // Parse the command line arguments; the first argument (index 1) is the path to the input csv file
     let args: Vec<String> = env::args().collect();
     let csv_file = &args[1];
 
@@ -24,8 +25,8 @@ fn main() -> anyhow::Result<()> {
     let mut csv_writer = csv::Writer::from_writer(io::stdout());
 
     // Try to parse the complete CSV file at first; if an error occurs don't start processing and abort instead
-    for res in csv_reader.deserialize() {
-        let raw_transaction: RawTransaction = res?;
+    for record in csv_reader.deserialize() {
+        let raw_transaction: RawTransaction = record?;
         let _transaction: Transaction = raw_transaction.try_into()?;
     }
 
