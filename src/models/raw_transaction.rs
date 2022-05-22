@@ -35,13 +35,13 @@ impl TryFrom<RawTransaction> for CheckedTransaction {
                 TransactionType::Deposit,
                 tx.client,
                 tx.tx,
-                validate(&tx, x)?,
+                validate_amount(&tx, x)?,
             ))),
             x if x == "withdrawal" => Ok(CheckedTransaction::Transaction(Transaction::new(
                 TransactionType::Withdrawal,
                 tx.client,
                 tx.tx,
-                validate(&tx, x)?,
+                validate_amount(&tx, x)?,
             ))),
             x if x == "dispute" => {
                 match tx.amount {
@@ -86,7 +86,7 @@ impl TryFrom<RawTransaction> for CheckedTransaction {
     }
 }
 
-fn validate(tx: &RawTransaction, transaction_type: &str) -> Result<f64, FormatError> {
+fn validate_amount(tx: &RawTransaction, transaction_type: &str) -> Result<f64, FormatError> {
     match tx.amount {
         Some(amount) => {
             if amount.is_finite() && amount.is_sign_positive() {
