@@ -6,8 +6,12 @@ mod payment_engine;
 use anyhow::anyhow;
 use std::env;
 
-// Output is parsed to stdout
-// Errors are parsed to stderr via anyhow
+/*
+    Output is parsed to stdout
+    Errors are parsed to stderr via anyhow
+    If an error occurs processing is aborted; the output file will remain empty
+*/
+
 fn main() -> Result<(), anyhow::Error> {
     // Parse the command line arguments
     let args: Vec<String> = env::args().collect();
