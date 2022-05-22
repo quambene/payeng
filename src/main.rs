@@ -55,12 +55,6 @@ mod tests {
     }
 
     #[test]
-    fn test_wrapper_invalid_type() {
-        let res = wrapper("test_data/transactions.csv");
-        assert!(res.is_ok());
-    }
-
-    #[test]
     fn test_wrapper_invalid_transaction_type() {
         let res = wrapper("test_data/transactions_invalid_transaction_type.csv");
         assert!(res.is_err());
