@@ -11,8 +11,8 @@ pub fn process(
     let mut accounts: HashMap<u16, Account> = HashMap::new();
 
     // Process transactions in chronological order
-    for tx_id in transaction_history {
-        match transactions.get(tx_id) {
+    for id in transaction_history {
+        match transactions.get(id) {
             Some(transaction) => match transaction.transaction_type {
                 TransactionType::Deposit => {
                     match accounts.entry(transaction.client_id) {
@@ -41,7 +41,7 @@ pub fn process(
                     // TODO: process transaction events for withdrawal
                 }
             },
-            None => Err(FormatError::UniqueTransactionId(*tx_id))?,
+            None => Err(FormatError::UniqueTransactionId(*id))?,
         };
     }
 
