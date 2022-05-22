@@ -22,6 +22,8 @@ pub enum DepositError {
     // TODO: improve error message and error name for InvalidClientId
     #[error("Can't deposit transaction: invalid client id")]
     InvalidClientId,
+    #[error("Can't deposit transaction: account is frozen for client id {}", 0.)]
+    FrozenAccount(u16),
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -31,6 +33,8 @@ pub enum WithdrawalError {
     InvalidClientId,
     #[error("Can't withdraw transaction: insufficient funds for client id {}", .0)]
     InsufficientFunds(u16),
+    #[error("Can't withdraw transaction: account is frozen for client id {}", 0.)]
+    FrozenAccount(u16),
 }
 
 #[derive(Error, Debug)]

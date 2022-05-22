@@ -29,26 +29,43 @@ impl Account {
         }
     }
 
+    pub fn freeze(&mut self) {
+        self.is_locked = true;
+    }
+
     pub fn deposit(&mut self, tx: &Transaction) -> Result<(), DepositError> {
         if self.client_id == tx.client_id {
-            self.available_amount = self.available_amount + tx.amount;
-            self.total_amount = self.total_amount + tx.amount;
-            Ok(())
+            if !self.is_locked {
+                self.available_amount = self.available_amount + tx.amount;
+                self.total_amount = self.total_amount + tx.amount;
+                Ok(())
+            } else {
+                // This aborts processing and is potentially undesirable
+                Err(DepositError::FrozenAccount(self.client_id))
+            }
         } else {
+            // Abort processing as input data are seriously flawed
             Err(DepositError::InvalidClientId)
         }
     }
 
     pub fn withdraw(&mut self, tx: &Transaction) -> Result<(), WithdrawalError> {
         if self.client_id == tx.client_id {
-            if self.available_amount - tx.amount >= 0.0 {
-                self.available_amount = self.available_amount - tx.amount;
-                self.total_amount = self.total_amount - tx.amount;
-                Ok(())
+            if !self.is_locked {
+                if self.available_amount - tx.amount >= 0.0 {
+                    self.available_amount = self.available_amount - tx.amount;
+                    self.total_amount = self.total_amount - tx.amount;
+                    Ok(())
+                } else {
+                    // This aborts processing and is potentially undesirable
+                    Err(WithdrawalError::InsufficientFunds(self.client_id))
+                }
             } else {
-                Err(WithdrawalError::InsufficientFunds(self.client_id))
+                // This aborts processing and is potentially undesirable
+                Err(WithdrawalError::FrozenAccount(self.client_id))
             }
         } else {
+            // Abort processing as input data are seriously flawed
             Err(WithdrawalError::InvalidClientId)
         }
     }
