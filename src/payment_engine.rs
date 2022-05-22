@@ -1,52 +1,84 @@
 use crate::{
     errors::FormatError,
-    models::{Account, Transaction, TransactionType},
+    models::{Account, EventType, Transaction, TransactionStatus, TransactionType},
 };
 use std::collections::{hash_map::Entry, HashMap};
 
-pub fn process(
+pub fn process_transactions(
     transaction_history: &[u32],
-    transactions: &HashMap<u32, Transaction>,
+    transactions: &mut HashMap<u32, Transaction>,
 ) -> Result<HashMap<u16, Account>, anyhow::Error> {
     // Use hash map for storing accounts; search, insertion and update is O(1)
     let mut accounts: HashMap<u16, Account> = HashMap::new();
 
     // Process transactions in chronological order
     for id in transaction_history {
-        match transactions.get(id) {
-            Some(transaction) => match transaction.transaction_type {
-                TransactionType::Deposit => {
-                    match accounts.entry(transaction.client_id) {
-                        Entry::Occupied(entry) => {
-                            let account = entry.into_mut();
-                            account.deposit(transaction)?
-                        }
-                        Entry::Vacant(entry) => {
-                            let account = entry.insert(Account::new(transaction.client_id));
-                            account.deposit(transaction)?
-                        }
+        match transactions.get_mut(id) {
+            Some(tx) => match tx.transaction_type {
+                TransactionType::Deposit => match accounts.entry(tx.client_id) {
+                    Entry::Occupied(entry) => {
+                        let account = entry.into_mut();
+                        account.deposit(tx)?;
+                        tx.status = TransactionStatus::Processed;
+                        process_events(tx, account)?;
                     }
-                    // TODO: process transaction events for deposit
-                }
-                TransactionType::Withdrawal => {
-                    match accounts.entry(transaction.client_id) {
-                        Entry::Occupied(entry) => {
-                            let account = entry.into_mut();
-                            account.withdraw(transaction)?
-                        }
-                        Entry::Vacant(entry) => {
-                            let account = entry.insert(Account::new(transaction.client_id));
-                            account.withdraw(transaction)?
-                        }
+                    Entry::Vacant(entry) => {
+                        let account = entry.insert(Account::new(tx.client_id));
+                        account.deposit(tx)?;
+                        tx.status = TransactionStatus::Processed;
+                        process_events(tx, account)?;
                     }
-                    // TODO: process transaction events for withdrawal
-                }
+                },
+                TransactionType::Withdrawal => match accounts.entry(tx.client_id) {
+                    Entry::Occupied(entry) => {
+                        let account = entry.into_mut();
+                        account.withdraw(tx)?;
+                        tx.status = TransactionStatus::Processed;
+                        process_events(tx, account)?;
+                    }
+                    Entry::Vacant(entry) => {
+                        let account = entry.insert(Account::new(tx.client_id));
+                        account.withdraw(tx)?;
+                        tx.status = TransactionStatus::Processed;
+                        process_events(tx, account)?;
+                    }
+                },
             },
             None => Err(FormatError::UniqueTransactionId(*id))?,
         };
     }
 
     Ok(accounts)
+}
+
+fn process_events(tx: &mut Transaction, account: &mut Account) -> Result<(), anyhow::Error> {
+    if tx.events.len() > 0 {
+        for event in tx.events.iter() {
+            match event {
+                EventType::Dispute => {
+                    account.dispute(tx)?;
+                    tx.status = TransactionStatus::Disputed;
+                }
+                EventType::Resolve => {
+                    // Ignore resolve if transaction isn't under dispute
+                    if tx.status == TransactionStatus::Disputed {
+                        account.resolve(tx)?;
+                        tx.status = TransactionStatus::Resolved;
+                    }
+                }
+                EventType::Chargeback => {
+                    // Ignore chargeback if transaction isn't under dispute
+                    if tx.status == TransactionStatus::Disputed {
+                        account.chargeback(tx)?;
+                        account.freeze();
+                        tx.status = TransactionStatus::Reversed;
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -70,7 +102,7 @@ mod tests {
         transactions.insert(4, transaction_4);
         transactions.insert(5, transaction_5);
 
-        let res = process(&transaction_history, &transactions);
+        let res = process_transactions(&transaction_history, &mut transactions);
         assert!(res.is_ok());
 
         let accounts = res.unwrap();

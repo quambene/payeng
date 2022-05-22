@@ -13,7 +13,7 @@ fn main() -> Result<(), anyhow::Error> {
     let args: Vec<String> = env::args().collect();
 
     let csv_file = if args.len() > 1 {
-        // First argument (index 1) is the path to the input csv file
+        // Second argument (index 1) is the path to the input csv file
         &args[1]
     } else {
         return Err(anyhow!(
@@ -27,10 +27,10 @@ fn main() -> Result<(), anyhow::Error> {
 // Thin wrapper for testing
 fn wrapper(csv_file: &str) -> Result<(), anyhow::Error> {
     // Read from file and convert RawTransactions to business objects
-    let (transaction_history, transactions) = csv::read(csv_file)?;
+    let (transaction_history, mut transactions) = csv::read(csv_file)?;
 
     // Process all transactions
-    let accounts = payment_engine::process(&transaction_history, &transactions)?;
+    let accounts = payment_engine::process_transactions(&transaction_history, &mut transactions)?;
 
     // Convert business objects from Account to RawAccount and write to stdout in csv format
     csv::write(accounts)?;

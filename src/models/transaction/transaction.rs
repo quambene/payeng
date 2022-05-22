@@ -6,13 +6,17 @@ pub enum TransactionType {
     Withdrawal,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TransactionStatus {
-    Initial,
-    Booked,
+    // Transaction prepared for processing
+    Initiated,
+    // Transaction processed sucessfully
+    Processed,
+    // Transaction is disputed
     Disputed,
+    // Transaction is resolved
     Resolved,
-    // reversed corresponds to performed chargeback
+    // Reversed corresponds to performed chargeback
     Reversed,
 }
 
@@ -40,7 +44,7 @@ impl Transaction {
             transaction_id,
             amount,
             events: vec![],
-            status: TransactionStatus::Initial,
+            status: TransactionStatus::Initiated,
         }
     }
 }

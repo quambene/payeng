@@ -3,7 +3,8 @@ mod transaction;
 
 pub use account::{Account, RawAccount};
 pub use transaction::{
-    CheckedTransaction, EventType, RawTransaction, Transaction, TransactionEvent, TransactionType,
+    CheckedTransaction, EventType, RawTransaction, Transaction, TransactionEvent,
+    TransactionStatus, TransactionType,
 };
 
 const PRECISION: f64 = 10000.;

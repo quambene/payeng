@@ -15,7 +15,7 @@ pub fn read(csv_file: &str) -> Result<(Vec<u32>, HashMap<u32, Transaction>), any
     // Collect time-ordered transaction ids in transaction_history; transactions have to be processed in chronological order
     let mut transaction_history: Vec<u32> = vec![];
 
-    // The transaction events (dispute, resolve, chargeback) are aggregated into the transactions so that transaction_id is unique in the input data
+    // The transaction events (dispute, resolve, chargeback) are aggregated into the transactions so that transaction_id is unique in the input data. This way transactions can be stored in a hash map. Otherwise, search in array would be O(n).
     let mut transactions: HashMap<u32, Transaction> = HashMap::new();
 
     // Prepare all transactions for processing (read from file, conversion to business objects)
