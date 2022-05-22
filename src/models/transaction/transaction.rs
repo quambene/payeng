@@ -16,6 +16,7 @@ pub enum TransactionStatus {
     Reversed,
 }
 
+// TODO: implement new type pattern for client_id and transaction_id
 #[derive(Debug)]
 pub struct Transaction {
     pub transaction_type: TransactionType,

@@ -1,6 +1,3 @@
-// TODO: check decimal precision
-// TODO: implement new type pattern for client_id
-
 use crate::{
     errors::{ChargebackError, DepositError, DisputeError, ResolveError, WithdrawalError},
     models::{
@@ -9,6 +6,7 @@ use crate::{
 };
 
 // TODO: implement locked account
+// TODO: implement new type pattern for client_id
 #[derive(Debug, PartialEq)]
 pub struct Account {
     pub client_id: u16,
