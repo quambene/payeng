@@ -10,6 +10,8 @@ pub enum FormatError {
     #[error("Unexpected format: missing amount for transaction id {} and transaction type '{}'", .0, .1)]
     MissingAmount(u32, String),
     #[error("Unexpected format: amount should be none for transaction id {} and transaction type '{}'", .0, .1)]
+    UnexpectedAmount(u32, String),
+    #[error("Unexpected format: amount is infinite or NaN for transaction id {} and transaction type '{}'", .0, .1)]
     InvalidAmount(u32, String),
     #[error("Unexpected format: transaction id {} is not unique", .0)]
     UniqueTransactionId(u32),

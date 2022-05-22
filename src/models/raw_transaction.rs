@@ -1,4 +1,4 @@
-use super::Transaction;
+use super::{round, Transaction};
 use crate::{
     errors::FormatError,
     models::{CheckedTransaction, EventType, TransactionEvent, TransactionType},
@@ -22,23 +22,17 @@ impl TryFrom<RawTransaction> for CheckedTransaction {
                 TransactionType::Deposit,
                 tx.client,
                 tx.tx,
-                match tx.amount {
-                    Some(amount) => amount,
-                    None => return Err(FormatError::MissingAmount(tx.tx, x.to_string())),
-                },
+                validate(&tx, x)?,
             ))),
             x if x == "withdrawal" => Ok(CheckedTransaction::Transaction(Transaction::new(
                 TransactionType::Withdrawal,
                 tx.client,
                 tx.tx,
-                match tx.amount {
-                    Some(amount) => amount,
-                    None => return Err(FormatError::MissingAmount(tx.tx, x.to_string())),
-                },
+                validate(&tx, x)?,
             ))),
             x if x == "dispute" => {
                 match tx.amount {
-                    Some(_) => return Err(FormatError::InvalidAmount(tx.tx, x.to_string())),
+                    Some(_) => return Err(FormatError::UnexpectedAmount(tx.tx, x.to_string())),
                     None => (),
                 }
 
@@ -50,7 +44,7 @@ impl TryFrom<RawTransaction> for CheckedTransaction {
             }
             x if x == "resolve" => {
                 match tx.amount {
-                    Some(_) => return Err(FormatError::InvalidAmount(tx.tx, x.to_string())),
+                    Some(_) => return Err(FormatError::UnexpectedAmount(tx.tx, x.to_string())),
                     None => (),
                 }
 
@@ -62,7 +56,7 @@ impl TryFrom<RawTransaction> for CheckedTransaction {
             }
             x if x == "chargeback" => {
                 match tx.amount {
-                    Some(_) => return Err(FormatError::InvalidAmount(tx.tx, x.to_string())),
+                    Some(_) => return Err(FormatError::UnexpectedAmount(tx.tx, x.to_string())),
                     None => (),
                 }
 
@@ -75,6 +69,27 @@ impl TryFrom<RawTransaction> for CheckedTransaction {
             x => {
                 return Err(FormatError::InvalidTransactionType(x.to_string(), tx.tx));
             }
+        }
+    }
+}
+
+fn validate(tx: &RawTransaction, transaction_type: &str) -> Result<f64, FormatError> {
+    match tx.amount {
+        Some(amount) => {
+            if amount.is_finite() {
+                Ok(round(amount))
+            } else {
+                Err(FormatError::InvalidAmount(
+                    tx.tx,
+                    transaction_type.to_string(),
+                ))
+            }
+        }
+        None => {
+            return Err(FormatError::MissingAmount(
+                tx.tx,
+                transaction_type.to_string(),
+            ))
         }
     }
 }
