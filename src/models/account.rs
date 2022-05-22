@@ -6,6 +6,8 @@ use crate::{
     models::{RawAccount, Transaction, TransactionType},
 };
 
+use super::round;
+
 // TODO: implement locked account
 #[derive(Debug, PartialEq)]
 pub struct Account {
@@ -141,9 +143,9 @@ impl From<Account> for RawAccount {
     fn from(account: Account) -> RawAccount {
         RawAccount {
             client: account.client_id,
-            available: account.available_amount,
-            held: account.held_amount,
-            total: account.total_amount,
+            available: round(account.available_amount),
+            held: round(account.held_amount),
+            total: round(account.total_amount),
             locked: account.is_locked,
         }
     }

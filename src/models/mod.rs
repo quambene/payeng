@@ -11,3 +11,24 @@ pub use raw_account::RawAccount;
 pub use raw_transaction::RawTransaction;
 pub use transaction::{Transaction, TransactionStatus, TransactionType};
 pub use transaction_event::{EventType, TransactionEvent};
+
+const PRECISION: f64 = 10000.;
+
+pub fn round(amount: f64) -> f64 {
+    (amount * PRECISION).round() / PRECISION
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_round() {
+        assert_eq!(round(42.34578), 42.3458)
+    }
+
+    #[test]
+    fn test_round_incorrect() {
+        assert_ne!(round(42.34578), 42.3457)
+    }
+}
