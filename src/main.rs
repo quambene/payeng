@@ -28,7 +28,7 @@ fn main() -> anyhow::Result<()> {
     // Prepare csv writer and configure to write csv records to stdout
     let mut csv_writer = csv::Writer::from_writer(io::stdout());
 
-    // Collect time-ordered transaction ids at transaction_history; transactions have to be processed in chronological order
+    // Collect time-ordered transaction ids in transaction_history; transactions have to be processed in chronological order
     let mut transaction_history: Vec<u32> = vec![];
 
     // The transaction events (dispute, resolved, chargeback) are aggregated into the transactions so that transaction_id is unique in the input data
@@ -57,10 +57,11 @@ fn main() -> anyhow::Result<()> {
                         if transaction.client_id == event.client_id {
                             transaction.events.push(event.event_type)
                         } else {
-                            // Assumption: client_id and transaction_id of the transaction event has to coincide with the actual transaction; ignore if this is not the case
+                            // Assumption: client_id and transaction_id of the transaction event have to coincide with the actual transaction; ignore if this is not the case
                             continue;
                         }
                     }
+                    // Assumption: transaction events which do not reference a transaction id can be ignored
                     None => continue,
                 }
             }

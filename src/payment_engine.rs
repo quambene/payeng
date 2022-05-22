@@ -60,14 +60,14 @@ mod tests {
         let transaction_4 = Transaction::new(TransactionType::Withdrawal, 1, 4, 1.5);
         let transaction_5 = Transaction::new(TransactionType::Withdrawal, 2, 5, 2.0);
 
+        let transaction_history = [1, 2, 3, 4, 5];
+
         let mut transactions: HashMap<u32, Transaction> = HashMap::new();
         transactions.insert(1, transaction_1);
         transactions.insert(2, transaction_2);
         transactions.insert(3, transaction_3);
         transactions.insert(4, transaction_4);
         transactions.insert(5, transaction_5);
-
-        let transaction_history = [1, 2, 3, 4, 5];
 
         let res = process(&transaction_history, &transactions);
         assert!(res.is_ok());
