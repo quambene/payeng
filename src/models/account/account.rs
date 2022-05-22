@@ -238,7 +238,7 @@ mod tests {
         assert!(res.is_err());
 
         let err = res.unwrap_err();
-        assert!(matches!(err, WithdrawalError::InsufficientFunds(client_id)));
+        assert_eq!(err, WithdrawalError::InsufficientFunds(client_id));
     }
 
     #[test]

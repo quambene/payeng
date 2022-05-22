@@ -24,7 +24,7 @@ pub enum DepositError {
     InvalidClientId,
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum WithdrawalError {
     // TODO: improve error message and error name for InvalidClientId
     #[error("Can't withdraw transaction: invalid client id")]

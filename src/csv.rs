@@ -45,7 +45,7 @@ pub fn read(csv_file: &str) -> Result<(Vec<u32>, HashMap<u32, Transaction>), any
                             continue;
                         }
                     }
-                    // Assumption: transaction events which do not reference a transaction id can be ignored
+                    // Assumption: transaction events which do not reference a valid transaction_id can be ignored
                     None => continue,
                 }
             }
