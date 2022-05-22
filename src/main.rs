@@ -81,4 +81,28 @@ mod tests {
             "Unexpected format: transaction id 1 is not unique"
         );
     }
+
+    #[test]
+    fn test_wrapper_invalid_amount() {
+        let res = wrapper("test_data/transactions_invalid_amount.csv");
+        assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "Unexpected format: amount is negative, infinite or NaN for transaction id 1 and transaction type 'deposit'"
+        );
+    }
+
+    #[test]
+    fn test_wrapper_deserialize_error() {
+        let res = wrapper("test_data/transactions_deserialize_error.csv");
+        assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "CSV deserialize error: record 1 (line: 2, byte: 43): field 3: invalid float literal"
+        );
+    }
 }
