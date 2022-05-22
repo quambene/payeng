@@ -13,6 +13,19 @@ pub struct RawTransaction {
     pub amount: Option<f64>,
 }
 
+// Used in tests
+#[allow(dead_code)]
+impl RawTransaction {
+    pub fn new(r#type: String, client: u16, tx: u32, amount: Option<f64>) -> Self {
+        Self {
+            r#type,
+            client,
+            tx,
+            amount,
+        }
+    }
+}
+
 impl TryFrom<RawTransaction> for CheckedTransaction {
     type Error = FormatError;
 
@@ -76,7 +89,7 @@ impl TryFrom<RawTransaction> for CheckedTransaction {
 fn validate(tx: &RawTransaction, transaction_type: &str) -> Result<f64, FormatError> {
     match tx.amount {
         Some(amount) => {
-            if amount.is_finite() {
+            if amount.is_finite() && amount.is_sign_positive() {
                 Ok(round(amount))
             } else {
                 Err(FormatError::InvalidAmount(
@@ -91,5 +104,99 @@ fn validate(tx: &RawTransaction, transaction_type: &str) -> Result<f64, FormatEr
                 transaction_type.to_string(),
             ))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_valid_transaction() {
+        let raw_transaction = RawTransaction::new("deposit".to_string(), 1, 1, Some(25.0));
+
+        let res: Result<CheckedTransaction, FormatError> = raw_transaction.try_into();
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_invalid_transaction_type() {
+        let raw_transaction = RawTransaction::new("unknown".to_string(), 1, 1, Some(25.0));
+
+        let res: Result<CheckedTransaction, FormatError> = raw_transaction.try_into();
+        assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert_eq!(
+            err,
+            FormatError::InvalidTransactionType("unknown".to_string(), 1)
+        );
+    }
+
+    #[test]
+    fn test_missing_amount() {
+        let raw_transaction = RawTransaction::new("deposit".to_string(), 1, 1, None);
+
+        let res: Result<CheckedTransaction, FormatError> = raw_transaction.try_into();
+        assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert_eq!(err, FormatError::MissingAmount(1, "deposit".to_string()));
+    }
+
+    #[test]
+    fn test_unexpected_amount() {
+        let raw_transaction = RawTransaction::new("dispute".to_string(), 1, 1, Some(25.0));
+
+        let res: Result<CheckedTransaction, FormatError> = raw_transaction.try_into();
+        assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert_eq!(err, FormatError::UnexpectedAmount(1, "dispute".to_string()));
+    }
+
+    #[test]
+    fn test_infinity_amount() {
+        let raw_transaction = RawTransaction::new("deposit".to_string(), 1, 1, Some(f64::INFINITY));
+
+        let res: Result<CheckedTransaction, FormatError> = raw_transaction.try_into();
+        assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert_eq!(err, FormatError::InvalidAmount(1, "deposit".to_string()));
+    }
+
+    #[test]
+    fn test_nan_amount() {
+        let raw_transaction = RawTransaction::new("deposit".to_string(), 1, 1, Some(f64::NAN));
+
+        let res: Result<CheckedTransaction, FormatError> = raw_transaction.try_into();
+        assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert_eq!(err, FormatError::InvalidAmount(1, "deposit".to_string()));
+    }
+
+    #[test]
+    fn test_neg_infinity_amount() {
+        let raw_transaction =
+            RawTransaction::new("deposit".to_string(), 1, 1, Some(f64::NEG_INFINITY));
+
+        let res: Result<CheckedTransaction, FormatError> = raw_transaction.try_into();
+        assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert_eq!(err, FormatError::InvalidAmount(1, "deposit".to_string()));
+    }
+
+    #[test]
+    fn test_negative_amount() {
+        let raw_transaction = RawTransaction::new("deposit".to_string(), 1, 1, Some(-25.0));
+
+        let res: Result<CheckedTransaction, FormatError> = raw_transaction.try_into();
+        assert!(res.is_err());
+
+        let err = res.unwrap_err();
+        assert_eq!(err, FormatError::InvalidAmount(1, "deposit".to_string()));
     }
 }
