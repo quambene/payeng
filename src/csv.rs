@@ -39,6 +39,7 @@ pub fn read(csv_file: &str) -> Result<(Vec<u32>, HashMap<u32, Transaction>), any
                 match transactions.get_mut(&event.transaction_id) {
                     Some(transaction) => {
                         if transaction.client_id == event.client_id {
+                            // Events are aggregated in chronological order
                             transaction.events.push(event.event_type)
                         } else {
                             // Assumption: client_id and transaction_id of the transaction event have to coincide with the actual transaction; ignore if this is not the case

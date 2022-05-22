@@ -8,6 +8,7 @@ pub fn process(
     transaction_history: &[u32],
     transactions: &HashMap<u32, Transaction>,
 ) -> Result<HashMap<u16, Account>, anyhow::Error> {
+    // Use hash map for storing accounts; search, insertion and update is O(1)
     let mut accounts: HashMap<u16, Account> = HashMap::new();
 
     // Process transactions in chronological order
