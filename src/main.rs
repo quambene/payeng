@@ -1,18 +1,20 @@
-mod account;
 mod errors;
+mod models;
 mod payment_engine;
-mod raw_account;
-mod raw_transaction;
-mod transaction;
 
-use crate::raw_account::RawAccount;
-use crate::raw_transaction::RawTransaction;
-use std::{env, io};
-use transaction::Transaction;
+use crate::{
+    errors::FormatError,
+    models::{CheckedTransaction, RawAccount, RawTransaction, Transaction},
+};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    env, io,
+};
 
 // TODO: Write test for different input files (with and without spaces)
 
-// Errors are parsed to stderr (instead of stdout) via anyhow
+// Output is parsed to stdout
+// Errors are parsed to stderr via anyhow
 fn main() -> anyhow::Result<()> {
     // Parse the command line arguments; the first argument (index 1) is the path to the input csv file
     let args: Vec<String> = env::args().collect();
@@ -26,23 +28,49 @@ fn main() -> anyhow::Result<()> {
     // Prepare csv writer and configure to write csv records to stdout
     let mut csv_writer = csv::Writer::from_writer(io::stdout());
 
-    // Try to parse the complete CSV file at first; if an error occurs don't start processing and abort instead
+    // Collect time-ordered transaction ids at transaction_history; transactions have to be processed in chronological order
+    let mut transaction_history: Vec<u32> = vec![];
+
+    // The transaction events (dispute, resolved, chargeback) are aggregated into the transactions so that transaction_id is unique in the input data
+    let mut transactions: HashMap<u32, Transaction> = HashMap::new();
+
+    // Prepare all transactions for processing (read from file, conversion to business objects)
     for record in csv_reader.deserialize() {
         let raw_transaction: RawTransaction = record?;
-        let _transaction: Transaction = raw_transaction.try_into()?;
+
+        // Check and verify input format via type CheckedTransaction
+        let checked_transaction: CheckedTransaction = raw_transaction.try_into()?;
+
+        match checked_transaction {
+            CheckedTransaction::Transaction(tx) => match transactions.entry(tx.transaction_id) {
+                Entry::Occupied(_) => {
+                    return Err(FormatError::UniqueTransactionId(tx.transaction_id))?;
+                }
+                Entry::Vacant(entry) => {
+                    transaction_history.push(tx.transaction_id);
+                    entry.insert(tx);
+                }
+            },
+            CheckedTransaction::TransactionEvent(event) => {
+                match transactions.get_mut(&event.transaction_id) {
+                    Some(transaction) => {
+                        if transaction.client_id == event.client_id {
+                            transaction.events.push(event.event_type)
+                        } else {
+                            // Assumption: client_id and transaction_id of the transaction event has to coincide with the actual transaction; ignore if this is not the case
+                            continue;
+                        }
+                    }
+                    None => continue,
+                }
+            }
+        };
     }
 
-    let mut transactions: Vec<Transaction> = vec![];
+    // Process all transactions
+    let accounts = payment_engine::process(&transaction_history, &transactions)?;
 
-    // Process all transactions (if complete CSV file was parsed correctly)
-    for res in csv_reader.deserialize() {
-        let raw_transaction: RawTransaction = res?;
-        let transaction: Transaction = raw_transaction.try_into()?;
-        transactions.push(transaction)
-    }
-
-    let accounts = payment_engine::process(&transactions)?;
-
+    // Convert all business objects (Account) to the output format (RawAccount) and write to stdout in csv format
     for (_client_id, account) in accounts {
         let raw_account: RawAccount = account.into();
         csv_writer.serialize(raw_account)?

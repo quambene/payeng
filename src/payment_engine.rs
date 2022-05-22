@@ -1,65 +1,47 @@
 use crate::{
-    account::Account,
-    transaction::{Transaction, TransactionType},
+    errors::FormatError,
+    models::{Account, Transaction, TransactionType},
 };
 use std::collections::{hash_map::Entry, HashMap};
 
-pub fn process(transactions: &[Transaction]) -> Result<HashMap<u16, Account>, anyhow::Error> {
+pub fn process(
+    transaction_history: &[u32],
+    transactions: &HashMap<u32, Transaction>,
+) -> Result<HashMap<u16, Account>, anyhow::Error> {
     let mut accounts: HashMap<u16, Account> = HashMap::new();
 
     // Process transactions in chronological order
-    for tx in transactions {
-        match tx.tx_type {
-            TransactionType::Deposit => match accounts.entry(tx.client_id) {
-                Entry::Occupied(entry) => {
-                    let account = entry.into_mut();
-                    account.deposit(tx)?
+    for tx_id in transaction_history {
+        match transactions.get(tx_id) {
+            Some(transaction) => match transaction.transaction_type {
+                TransactionType::Deposit => {
+                    match accounts.entry(transaction.client_id) {
+                        Entry::Occupied(entry) => {
+                            let account = entry.into_mut();
+                            account.deposit(transaction)?
+                        }
+                        Entry::Vacant(entry) => {
+                            let account = entry.insert(Account::new(transaction.client_id));
+                            account.deposit(transaction)?
+                        }
+                    }
+                    // TODO: process transaction events for deposit
                 }
-                Entry::Vacant(entry) => {
-                    let account = entry.insert(Account::new(tx.client_id));
-                    account.deposit(tx)?
-                }
-            },
-            TransactionType::Withdrawal => match accounts.entry(tx.client_id) {
-                Entry::Occupied(entry) => {
-                    let account = entry.into_mut();
-                    account.withdraw(tx)?
-                }
-                Entry::Vacant(entry) => {
-                    let account = entry.insert(Account::new(tx.client_id));
-                    account.withdraw(tx)?
-                }
-            },
-            TransactionType::Dispute => match accounts.entry(tx.client_id) {
-                Entry::Occupied(entry) => {
-                    let account = entry.into_mut();
-                    account.dispute(tx, &transactions)?
-                }
-                Entry::Vacant(entry) => {
-                    let account = entry.insert(Account::new(tx.client_id));
-                    account.dispute(tx, &transactions)?
+                TransactionType::Withdrawal => {
+                    match accounts.entry(transaction.client_id) {
+                        Entry::Occupied(entry) => {
+                            let account = entry.into_mut();
+                            account.withdraw(transaction)?
+                        }
+                        Entry::Vacant(entry) => {
+                            let account = entry.insert(Account::new(transaction.client_id));
+                            account.withdraw(transaction)?
+                        }
+                    }
+                    // TODO: process transaction events for withdrawal
                 }
             },
-            TransactionType::Resolve => match accounts.entry(tx.client_id) {
-                Entry::Occupied(entry) => {
-                    let account = entry.into_mut();
-                    account.resolve(tx, &transactions)?
-                }
-                Entry::Vacant(entry) => {
-                    let account = entry.insert(Account::new(tx.client_id));
-                    account.resolve(tx, &transactions)?
-                }
-            },
-            TransactionType::Chargeback => match accounts.entry(tx.client_id) {
-                Entry::Occupied(entry) => {
-                    let account = entry.into_mut();
-                    account.chargeback(tx, &transactions)?
-                }
-                Entry::Vacant(entry) => {
-                    let account = entry.insert(Account::new(tx.client_id));
-                    account.chargeback(tx, &transactions)?
-                }
-            },
+            None => Err(FormatError::UniqueTransactionId(*tx_id))?,
         };
     }
 
@@ -72,15 +54,22 @@ mod tests {
 
     #[test]
     fn test_process() {
-        let transactions = vec![
-            Transaction::new(TransactionType::Deposit, 1, 1, Some(1.0)),
-            Transaction::new(TransactionType::Deposit, 2, 2, Some(2.0)),
-            Transaction::new(TransactionType::Deposit, 1, 3, Some(2.0)),
-            Transaction::new(TransactionType::Withdrawal, 1, 4, Some(1.5)),
-            Transaction::new(TransactionType::Withdrawal, 2, 5, Some(2.0)),
-        ];
+        let transaction_1 = Transaction::new(TransactionType::Deposit, 1, 1, 1.0);
+        let transaction_2 = Transaction::new(TransactionType::Deposit, 2, 2, 2.0);
+        let transaction_3 = Transaction::new(TransactionType::Deposit, 1, 3, 2.0);
+        let transaction_4 = Transaction::new(TransactionType::Withdrawal, 1, 4, 1.5);
+        let transaction_5 = Transaction::new(TransactionType::Withdrawal, 2, 5, 2.0);
 
-        let res = process(&transactions);
+        let mut transactions: HashMap<u32, Transaction> = HashMap::new();
+        transactions.insert(1, transaction_1);
+        transactions.insert(2, transaction_2);
+        transactions.insert(3, transaction_3);
+        transactions.insert(4, transaction_4);
+        transactions.insert(5, transaction_5);
+
+        let transaction_history = [1, 2, 3, 4, 5];
+
+        let res = process(&transaction_history, &transactions);
         assert!(res.is_ok());
 
         let accounts = res.unwrap();
