@@ -48,7 +48,7 @@ impl Account {
                 self.total_amount = self.total_amount - tx.amount;
                 Ok(())
             } else {
-                Err(WithdrawalError::InsufficientFunds)
+                Err(WithdrawalError::InsufficientFunds(self.client_id))
             }
         } else {
             Err(WithdrawalError::InvalidClientId)
@@ -240,7 +240,7 @@ mod tests {
         assert!(res.is_err());
 
         let err = res.unwrap_err();
-        assert!(matches!(err, WithdrawalError::InsufficientFunds));
+        assert!(matches!(err, WithdrawalError::InsufficientFunds(client_id)));
     }
 
     #[test]
