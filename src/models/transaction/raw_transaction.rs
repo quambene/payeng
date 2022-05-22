@@ -1,7 +1,7 @@
-use super::{round, Transaction};
+use super::Transaction;
 use crate::{
     errors::FormatError,
-    models::{CheckedTransaction, EventType, TransactionEvent, TransactionType},
+    models::{round, CheckedTransaction, EventType, TransactionEvent, TransactionType},
 };
 use serde::Deserialize;
 

@@ -3,10 +3,10 @@
 
 use crate::{
     errors::{ChargebackError, DepositError, DisputeError, ResolveError, WithdrawalError},
-    models::{RawAccount, Transaction, TransactionType},
+    models::{
+        round, RawAccount, {Transaction, TransactionType},
+    },
 };
-
-use super::round;
 
 // TODO: implement locked account
 #[derive(Debug, PartialEq)]

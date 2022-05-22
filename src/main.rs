@@ -9,10 +9,11 @@ use std::env;
 // Output is parsed to stdout
 // Errors are parsed to stderr via anyhow
 fn main() -> Result<(), anyhow::Error> {
-    // Parse the command line arguments; the first argument (index 1) is the path to the input csv file
+    // Parse the command line arguments
     let args: Vec<String> = env::args().collect();
 
     let csv_file = if args.len() > 1 {
+        // First argument (index 1) is the path to the input csv file
         &args[1]
     } else {
         return Err(anyhow!(
