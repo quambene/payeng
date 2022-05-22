@@ -11,8 +11,8 @@
 !README.md
 
 # Test data
-test_data
 *.csv
+!test_data/*
 
 # Cargo
 /target
