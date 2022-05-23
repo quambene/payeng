@@ -13,8 +13,6 @@ pub enum FormatError {
     UnexpectedAmount(u32, String),
     #[error("Unexpected format: amount is negative, infinite or NaN for transaction id {} and transaction type '{}'", .0, .1)]
     InvalidAmount(u32, String),
-    #[error("Unexpected format: transaction id {} is not unique", .0)]
-    UniqueTransactionId(u32),
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -37,28 +35,4 @@ pub enum WithdrawalError {
     FrozenAccount(u16),
     #[error("Can't withdraw transaction: invalid transaction type for transaction id {}", .0)]
     InvalidTransactionType(u32),
-}
-
-#[derive(Error, Debug)]
-pub enum DisputeError {
-    #[error("Can't dispute transaction: invalid client id")]
-    InvalidClientId,
-    #[error("Can't dispute transaction: invalid event type for transaction id {}", .0)]
-    InvalidEventType(u32),
-}
-
-#[derive(Error, Debug)]
-pub enum ResolveError {
-    #[error("Can't resolve transaction: invalid client id")]
-    InvalidClientId,
-    #[error("Can't resolve transaction: invalid event type for transaction id {}", .0)]
-    InvalidEventType(u32),
-}
-
-#[derive(Error, Debug)]
-pub enum ChargebackError {
-    #[error("Can't chargeback transaction: invalid client id")]
-    InvalidClientId,
-    #[error("Can't chargeback transaction: invalid event type for transaction id {}", .0)]
-    InvalidEventType(u32),
 }

@@ -1,10 +1,15 @@
-mod csv;
 mod errors;
 mod models;
-mod payment_engine;
 
 use anyhow::anyhow;
-use std::env;
+use models::{
+    Account, CheckedTransaction, RawTransaction, TransactionType, RawAccount,
+};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    env,
+    fs::File,
+};
 
 /*
     Output is parsed to stdout
@@ -25,27 +30,72 @@ fn main() -> Result<(), anyhow::Error> {
         ));
     };
 
-    wrapper(csv_file)
+    chunkwise(csv_file)
 }
 
-// Thin wrapper for testing
-fn wrapper(csv_file: &str) -> Result<(), anyhow::Error> {
-    // Read raw transactions from csv file
-    let raw_transactions = csv::read(csv_file)?;
+// Demonstration of buffered reading (memory consumption keeps low)
+fn chunkwise(csv_file: &str) -> Result<(), anyhow::Error> {
+    let file = File::open(csv_file)?;
 
-    // Prepare transactions for processing and convert raw transactions to business objects
-    let (transaction_history, mut transactions) = payment_engine::preprocess(raw_transactions)?;
+    // CSV reader is already buffered; no need for std::io::BufReader
+    let mut csv_reader = csv::ReaderBuilder::new()
+        .trim(csv::Trim::All)
+        .from_reader(file);
 
-    // Process all transactions
-    let accounts = payment_engine::process_transactions(&transaction_history, &mut transactions)?;
+    let mut accounts: HashMap<u16, Account> = HashMap::new();
 
-    // Convert business objects from Account to RawAccount
-    let raw_accounts = payment_engine::postprocess(accounts)?;
+    for record in csv_reader.deserialize() {
+        let raw_transaction: RawTransaction = record?;
+        let checked_transaction: CheckedTransaction = raw_transaction.try_into()?;
 
-    // Write raw accounts to stdout in csv format
-    csv::write(raw_accounts)?;
+        match checked_transaction {
+            CheckedTransaction::Transaction(tx) => match accounts.entry(tx.client_id) {
+                Entry::Occupied(entry) => {
+                    let account = entry.into_mut();
+
+                    match tx.transaction_type {
+                        TransactionType::Deposit => account.deposit(&tx)?,
+                        TransactionType::Withdrawal => account.withdraw(&tx)?,
+                    };
+                }
+                Entry::Vacant(entry) => {
+                    let account = entry.insert(Account::new(tx.client_id));
+
+                    match tx.transaction_type {
+                        TransactionType::Deposit => account.deposit(&tx)?,
+                        TransactionType::Withdrawal => account.withdraw(&tx)?,
+                    };
+                }
+            },
+            CheckedTransaction::TransactionEvent(_event) => {
+                // One possible strategy for handling transaction events is described in the readme
+                todo!()
+            }
+        }
+    }
+
+    let mut csv_writer = csv::Writer::from_writer(std::io::stdout());
+
+    let raw_accounts = postprocess(accounts);
+
+    for raw_account in raw_accounts {
+        csv_writer.serialize(raw_account)?;
+    }
+
+    csv_writer.flush()?;
 
     Ok(())
+}
+
+fn postprocess(accounts: HashMap<u16, Account>) -> Result<Vec<RawAccount>, anyhow::Error> {
+    let mut raw_accounts: Vec<RawAccount> = vec![];
+
+    for (_client_id, account) in accounts {
+        let raw_account = account.into();
+        raw_accounts.push(raw_account);
+    }
+
+    Ok(raw_accounts)
 }
 
 #[cfg(test)]
@@ -54,66 +104,6 @@ mod tests {
     use crate::models::RawTransaction;
     use ::csv::Writer;
     use std::fs;
-
-    #[test]
-    fn test_wrapper() {
-        let res = wrapper("test_data/transactions.csv");
-        assert!(res.is_ok());
-    }
-
-    #[test]
-    fn test_wrapper_whitespaces() {
-        let res = wrapper("test_data/transactions_whitespaces.csv");
-        assert!(res.is_ok());
-    }
-
-    #[test]
-    fn test_wrapper_with_events() {
-        let res = wrapper("test_data/transactions_with_events.csv");
-        assert!(res.is_ok());
-    }
-
-    #[test]
-    fn test_wrapper_invalid_transaction_type() {
-        let res = wrapper("test_data/transactions_invalid_transaction_type.csv");
-        assert!(res.is_err());
-
-        let err = res.unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "Unexpected format: invalid transaction type 'unknown' in transaction id 5"
-        );
-    }
-
-    #[test]
-    fn test_wrapper_invalid_transaction_id() {
-        let res = wrapper("test_data/transactions_invalid_transaction_id.csv");
-        assert!(res.is_err());
-
-        let err = res.unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "Unexpected format: transaction id 1 is not unique"
-        );
-    }
-
-    #[test]
-    fn test_wrapper_invalid_amount() {
-        let res = wrapper("test_data/transactions_invalid_amount.csv");
-        assert!(res.is_err());
-
-        let err = res.unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "Unexpected format: amount is negative, infinite or NaN for transaction id 1 and transaction type 'deposit'"
-        );
-    }
-
-    #[test]
-    fn test_wrapper_deserialize_error() {
-        let res = wrapper("test_data/transactions_deserialize_error.csv");
-        assert!(res.is_err());
-    }
 
     #[test]
     #[ignore = "performance test"]
@@ -127,7 +117,7 @@ mod tests {
             max_value of 10_000_000 corresponds roughly to 200 MB of file size
             max_value of 100_000_000 corresponds roughly to 2 GB of file size
         */
-        let max_value = 1_000_000;
+        let max_value = 100_000_000;
         for i in 1..max_value {
             let raw_transaction = RawTransaction::new(String::from("deposit"), 1, i, Some(1.0));
             csv_writer.serialize(raw_transaction).unwrap();
@@ -135,13 +125,12 @@ mod tests {
         csv_writer.flush().unwrap();
 
         let instant = std::time::Instant::now();
-        let res = wrapper(csv_path);
+        let res = chunkwise(csv_path);
         let elapsed_time = instant.elapsed().as_millis();
 
         assert!(res.is_ok());
 
         println!("response time: {:?} ms", elapsed_time);
-        assert!(elapsed_time < 50000);
 
         fs::remove_file(csv_path).unwrap();
     }

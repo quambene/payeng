@@ -12,13 +12,13 @@ pub enum TransactionStatus {
     // Transaction prepared for processing
     Initiated,
     // Transaction processed sucessfully
-    Processed,
+    _Processed,
     // Transaction is disputed
-    Disputed,
+    _Disputed,
     // Dispute is resolved
-    Resolved,
+    _Resolved,
     // Dispute is resolved by reversing the transaction (corresponding to a chargeback)
-    Reversed,
+    _Reversed,
 }
 
 #[derive(Debug, PartialEq)]
