@@ -56,20 +56,20 @@ fn process_events(tx: &mut Transaction, account: &mut Account) -> Result<(), any
         for event in tx.events.iter() {
             match event {
                 EventType::Dispute => {
-                    account.dispute(tx)?;
+                    account.dispute(tx, event)?;
                     tx.status = TransactionStatus::Disputed;
                 }
                 EventType::Resolve => {
                     // Ignore resolve if transaction isn't under dispute
                     if tx.status == TransactionStatus::Disputed {
-                        account.resolve(tx)?;
+                        account.resolve(tx, event)?;
                         tx.status = TransactionStatus::Resolved;
                     }
                 }
                 EventType::Chargeback => {
                     // Ignore chargeback if transaction isn't under dispute
                     if tx.status == TransactionStatus::Disputed {
-                        account.chargeback(tx)?;
+                        account.chargeback(tx, event)?;
                         account.freeze();
                         tx.status = TransactionStatus::Reversed;
                     }

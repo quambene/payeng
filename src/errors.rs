@@ -21,8 +21,10 @@ pub enum FormatError {
 pub enum DepositError {
     #[error("Can't deposit transaction: invalid client id")]
     InvalidClientId,
-    #[error("Can't deposit transaction: account is frozen for client id {}", 0.)]
+    #[error("Can't deposit transaction: account is frozen for client id {}", .0)]
     FrozenAccount(u16),
+    #[error("Can't deposit transaction: invalid transaction type for transaction id {}", .0)]
+    InvalidTransactionType(u32),
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -31,24 +33,32 @@ pub enum WithdrawalError {
     InvalidClientId,
     #[error("Can't withdraw transaction: insufficient funds for client id {}", .0)]
     InsufficientFunds(u16),
-    #[error("Can't withdraw transaction: account is frozen for client id {}", 0.)]
+    #[error("Can't withdraw transaction: account is frozen for client id {}", .0)]
     FrozenAccount(u16),
+    #[error("Can't withdraw transaction: invalid transaction type for transaction id {}", .0)]
+    InvalidTransactionType(u32),
 }
 
 #[derive(Error, Debug)]
 pub enum DisputeError {
     #[error("Can't dispute transaction: invalid client id")]
     InvalidClientId,
+    #[error("Can't dispute transaction: invalid event type for transaction id {}", .0)]
+    InvalidEventType(u32),
 }
 
 #[derive(Error, Debug)]
 pub enum ResolveError {
     #[error("Can't resolve transaction: invalid client id")]
     InvalidClientId,
+    #[error("Can't resolve transaction: invalid event type for transaction id {}", .0)]
+    InvalidEventType(u32),
 }
 
 #[derive(Error, Debug)]
 pub enum ChargebackError {
     #[error("Can't chargeback transaction: invalid client id")]
     InvalidClientId,
+    #[error("Can't chargeback transaction: invalid event type for transaction id {}", .0)]
+    InvalidEventType(u32),
 }
