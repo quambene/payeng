@@ -53,10 +53,12 @@ Processing of transactions is divided into 5 steps:
 
 The core steps 2 to 4 are handled in module `payment_engine`. Reading and writing csv files (step 1 and 5) is handled in module `csv`.
 
-Business objects for transactions differentiate between
+Transactions are subdivided into
 
 - `Transaction`s (deposit, withdrawal), and
 - `TransactionEvent`s (dispute, resolve, chargeback) which affect existing  `Transaction`s
+
+The business object `Transaction` includes its transaction events as attribute.
 
 Furthermore, the `transaction_history` includes all transactions IDs in chronological order. To prevent expensive searching in the transaction history, all transactions are saved in a `HashMap`.
 
