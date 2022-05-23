@@ -26,12 +26,14 @@ mod tests {
         assert!(res.is_ok());
 
         let raw_accounts = res.unwrap();
+
         assert_eq!(
-            raw_accounts,
-            vec![
-                RawAccount::new(1, 0.0, 0.0, 0.0, false),
-                RawAccount::new(2, 0.0, 0.0, 0.0, false)
-            ]
-        )
+            raw_accounts.iter().find(|el| el.client == 1).unwrap(),
+            &RawAccount::new(1, 0.0, 0.0, 0.0, false)
+        );
+        assert_eq!(
+            raw_accounts.iter().find(|el| el.client == 2).unwrap(),
+            &RawAccount::new(2, 0.0, 0.0, 0.0, false)
+        );
     }
 }
