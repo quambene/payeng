@@ -88,3 +88,5 @@ git checkout performance
 # Run performance test with 100 million transactions as input (~2GB file size)
 cargo test --release test_performance -- --ignored
 ```
+
+This version on branch `performance` demontrates the use of buffered reading. Notice that the memory footprint keeps low.
