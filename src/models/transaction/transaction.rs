@@ -14,13 +14,12 @@ pub enum TransactionStatus {
     Processed,
     // Transaction is disputed
     Disputed,
-    // Transaction is resolved
+    // Dispute is resolved
     Resolved,
-    // Reversed corresponds to performed chargeback
+    // Dispute is resolve by reversing the transaction (corresponds to chargeback performed)
     Reversed,
 }
 
-// TODO: implement new type pattern for client_id and transaction_id
 #[derive(Debug)]
 pub struct Transaction {
     pub transaction_type: TransactionType,

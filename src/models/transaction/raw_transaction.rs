@@ -79,9 +79,7 @@ impl TryFrom<RawTransaction> for CheckedTransaction {
                     tx.tx,
                 )))
             }
-            x => {
-                return Err(FormatError::InvalidTransactionType(x.to_string(), tx.tx));
-            }
+            x => Err(FormatError::InvalidTransactionType(x.to_string(), tx.tx)),
         }
     }
 }
@@ -98,12 +96,10 @@ fn validate_amount(tx: &RawTransaction, transaction_type: &str) -> Result<f64, F
                 ))
             }
         }
-        None => {
-            return Err(FormatError::MissingAmount(
-                tx.tx,
-                transaction_type.to_string(),
-            ))
-        }
+        None => Err(FormatError::MissingAmount(
+            tx.tx,
+            transaction_type.to_string(),
+        )),
     }
 }
 

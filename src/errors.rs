@@ -19,7 +19,6 @@ pub enum FormatError {
 
 #[derive(Error, Debug, PartialEq)]
 pub enum DepositError {
-    // TODO: improve error message and error name for InvalidClientId
     #[error("Can't deposit transaction: invalid client id")]
     InvalidClientId,
     #[error("Can't deposit transaction: account is frozen for client id {}", 0.)]
@@ -28,7 +27,6 @@ pub enum DepositError {
 
 #[derive(Error, Debug, PartialEq)]
 pub enum WithdrawalError {
-    // TODO: improve error message and error name for InvalidClientId
     #[error("Can't withdraw transaction: invalid client id")]
     InvalidClientId,
     #[error("Can't withdraw transaction: insufficient funds for client id {}", .0)]
@@ -39,21 +37,18 @@ pub enum WithdrawalError {
 
 #[derive(Error, Debug)]
 pub enum DisputeError {
-    // TODO: improve error message and error name for InvalidClientId
     #[error("Can't dispute transaction: invalid client id")]
     InvalidClientId,
 }
 
 #[derive(Error, Debug)]
 pub enum ResolveError {
-    // TODO: improve error message and error name for InvalidClientId
     #[error("Can't resolve transaction: invalid client id")]
     InvalidClientId,
 }
 
 #[derive(Error, Debug)]
 pub enum ChargebackError {
-    // TODO: improve error message and error name for InvalidClientId
     #[error("Can't chargeback transaction: invalid client id")]
     InvalidClientId,
 }

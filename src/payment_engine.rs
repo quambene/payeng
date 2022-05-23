@@ -44,7 +44,7 @@ pub fn process_transactions(
                     }
                 },
             },
-            None => Err(FormatError::UniqueTransactionId(*id))?,
+            None => return Err(FormatError::UniqueTransactionId(*id).into()),
         };
     }
 
@@ -52,7 +52,7 @@ pub fn process_transactions(
 }
 
 fn process_events(tx: &mut Transaction, account: &mut Account) -> Result<(), anyhow::Error> {
-    if tx.events.len() > 0 {
+    if !tx.events.is_empty() {
         for event in tx.events.iter() {
             match event {
                 EventType::Dispute => {

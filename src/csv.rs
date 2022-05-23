@@ -28,7 +28,7 @@ pub fn read(csv_file: &str) -> Result<(Vec<u32>, HashMap<u32, Transaction>), any
         match checked_transaction {
             CheckedTransaction::Transaction(tx) => match transactions.entry(tx.transaction_id) {
                 Entry::Occupied(_) => {
-                    return Err(FormatError::UniqueTransactionId(tx.transaction_id))?;
+                    return Err(FormatError::UniqueTransactionId(tx.transaction_id).into());
                 }
                 Entry::Vacant(entry) => {
                     transaction_history.push(tx.transaction_id);
@@ -53,7 +53,7 @@ pub fn read(csv_file: &str) -> Result<(Vec<u32>, HashMap<u32, Transaction>), any
         };
     }
 
-    return Ok((transaction_history, transactions));
+    Ok((transaction_history, transactions))
 }
 
 pub fn write(accounts: HashMap<u16, Account>) -> Result<(), anyhow::Error> {

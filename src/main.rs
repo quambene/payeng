@@ -22,7 +22,7 @@ fn main() -> Result<(), anyhow::Error> {
     } else {
         return Err(anyhow!(
             "Missing input file: please specify the path as argument"
-        ))?;
+        ));
     };
 
     wrapper(csv_file)
