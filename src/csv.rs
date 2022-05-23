@@ -28,5 +28,7 @@ pub fn write(raw_accounts: Vec<RawAccount>) -> Result<(), anyhow::Error> {
         csv_writer.serialize(raw_account)?;
     }
 
+    csv_writer.flush()?;
+
     Ok(())
 }

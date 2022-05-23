@@ -30,7 +30,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 // Thin wrapper for testing
 fn wrapper(csv_file: &str) -> Result<(), anyhow::Error> {
-    // Read raw transactions from file
+    // Read raw transactions from csv file
     let raw_transactions = csv::read(csv_file)?;
 
     // Prepare transactions for processing and convert raw transactions to business objects
@@ -51,6 +51,9 @@ fn wrapper(csv_file: &str) -> Result<(), anyhow::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::RawTransaction;
+    use ::csv::Writer;
+    use std::fs;
 
     #[test]
     fn test_wrapper() {
@@ -61,6 +64,12 @@ mod tests {
     #[test]
     fn test_wrapper_whitespaces() {
         let res = wrapper("test_data/transactions_whitespaces.csv");
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_wrapper_with_events() {
+        let res = wrapper("test_data/transactions_with_events.csv");
         assert!(res.is_ok());
     }
 
@@ -104,5 +113,36 @@ mod tests {
     fn test_wrapper_deserialize_error() {
         let res = wrapper("test_data/transactions_deserialize_error.csv");
         assert!(res.is_err());
+    }
+
+    #[test]
+    #[ignore = "performance test"]
+    fn test_performance() {
+        fs::create_dir_all("tmp").unwrap();
+        let csv_path = "tmp/transactions.csv";
+        let mut csv_writer = Writer::from_path(csv_path).unwrap();
+
+        /*
+            max_value of 1_000_000 corresponds roughly to 20 MB of file size
+            max_value of 10_000_000 corresponds roughly to 200 MB of file size
+            max_value of 100_000_000 corresponds roughly to 2 GB of file size
+        */
+        let max_value = 1_000_000;
+        for i in 1..max_value {
+            let raw_transaction = RawTransaction::new(String::from("deposit"), 1, i, Some(1.0));
+            csv_writer.serialize(raw_transaction).unwrap();
+        }
+        csv_writer.flush().unwrap();
+
+        let instant = std::time::Instant::now();
+        let res = wrapper(csv_path);
+        let elapsed_time = instant.elapsed().as_millis();
+
+        assert!(res.is_ok());
+
+        println!("response time: {:?} ms", elapsed_time);
+        assert!(elapsed_time < 50000);
+
+        fs::remove_file(csv_path).unwrap();
     }
 }
