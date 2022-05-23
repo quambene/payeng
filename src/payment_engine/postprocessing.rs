@@ -11,3 +11,27 @@ pub fn postprocess(accounts: HashMap<u16, Account>) -> Result<Vec<RawAccount>, a
 
     Ok(raw_accounts)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_postprocess() {
+        let mut accounts = HashMap::new();
+        accounts.insert(1, Account::new(1));
+        accounts.insert(2, Account::new(2));
+
+        let res = postprocess(accounts);
+        assert!(res.is_ok());
+
+        let raw_accounts = res.unwrap();
+        assert_eq!(
+            raw_accounts,
+            vec![
+                RawAccount::new(1, 0.0, 0.0, 0.0, false),
+                RawAccount::new(2, 0.0, 0.0, 0.0, false)
+            ]
+        )
+    }
+}
