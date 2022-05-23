@@ -66,7 +66,7 @@ Client accounts are stored in the business object `Account`. Since client accoun
 
 ## Correctness, completeness, and safety
 
-Correctness and completeness is ensured by exhaustive unit testing. Test data are included in the tests itself or in the `test_data` directory. Run all tests as described above.
+Correctness and completeness is ensured by exhaustive unit testing. Test data are included in the tests or in the `test_data` directory. Run all tests as described above.
 
 The input format and data types of the `transactions.csv` file are validated via the helper type `CheckedTransaction`.
 
