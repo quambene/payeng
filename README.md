@@ -37,8 +37,8 @@ cargo run --release -- transactions.csv > accounts.csv
 # Run unit and integration tests
 cargo test
 
-# Run performance test
-cargo test test_performance -- --ignored
+# Run performance test in release mode
+cargo test --release test_performance -- --ignored
 ```
 
 ## Architecture
@@ -84,4 +84,7 @@ The version with chunk-wise processing can be found on branch `performance`:
 
 ``` bash
 git checkout performance
+
+# Run performance test with 100 million transactions as input (~2GB file size)
+cargo test --release test_performance -- --ignored
 ```
