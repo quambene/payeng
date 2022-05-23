@@ -4,7 +4,7 @@ mod models;
 mod payment_engine;
 
 use anyhow::anyhow;
-use std::{env, fs::File};
+use std::env;
 
 /*
     Output is parsed to stdout
