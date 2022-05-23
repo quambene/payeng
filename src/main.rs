@@ -43,16 +43,7 @@ fn wrapper(csv_file: &str) -> Result<(), anyhow::Error> {
     let raw_accounts = payment_engine::postprocess(accounts)?;
 
     // Write raw accounts to stdout in csv format
-    let res = csv::write(raw_accounts);
-
-    // Revert state if error occurs to prevent incomplete state
-    match res {
-        Ok(_) => (),
-        Err(_) => {
-            let file = File::open("accounts.csv")?;
-            file.set_len(0)?;
-        }
-    }
+    csv::write(raw_accounts)?;
 
     Ok(())
 }
