@@ -359,7 +359,7 @@ mod tests {
         let mut transaction = Transaction::new(TransactionType::Deposit, 1, 1, 25.0);
         account.deposit(&transaction).unwrap();
         account.dispute(&transaction, &EventType::Dispute).unwrap();
-        transaction.disputed();
+        transaction.status = TransactionStatus::Disputed;
 
         let res = account.resolve(&transaction, &EventType::Resolve);
         assert!(res.is_ok());
@@ -388,7 +388,7 @@ mod tests {
         account
             .dispute(&withdraw_transaction, &EventType::Dispute)
             .unwrap();
-        withdraw_transaction.disputed();
+        withdraw_transaction.status = TransactionStatus::Disputed;
 
         let res = account.resolve(&withdraw_transaction, &EventType::Resolve);
         assert!(res.is_ok());
@@ -411,7 +411,7 @@ mod tests {
         let mut transaction = Transaction::new(TransactionType::Deposit, 1, 1, 25.0);
         account.deposit(&transaction).unwrap();
         account.dispute(&transaction, &EventType::Dispute).unwrap();
-        transaction.disputed();
+        transaction.status = TransactionStatus::Disputed;
 
         let res = account.chargeback(&transaction, &EventType::Chargeback);
         assert!(res.is_ok());
@@ -440,7 +440,7 @@ mod tests {
         account
             .dispute(&withdraw_transaction, &EventType::Dispute)
             .unwrap();
-        withdraw_transaction.disputed();
+        withdraw_transaction.status = TransactionStatus::Disputed;
 
         let res = account.chargeback(&withdraw_transaction, &EventType::Chargeback);
         assert!(res.is_ok());

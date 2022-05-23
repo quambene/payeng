@@ -1,11 +1,12 @@
 use super::EventType;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TransactionType {
     Deposit,
     Withdrawal,
 }
 
+// The workflow of a Transaction is described by its TransactionStatus
 #[derive(Debug, PartialEq)]
 pub enum TransactionStatus {
     // Transaction prepared for processing
@@ -16,7 +17,7 @@ pub enum TransactionStatus {
     Disputed,
     // Dispute is resolved
     Resolved,
-    // Dispute is resolve by reversing the transaction (corresponds to chargeback performed)
+    // Dispute is resolved by reversing the transaction (corresponding to a chargeback)
     Reversed,
 }
 

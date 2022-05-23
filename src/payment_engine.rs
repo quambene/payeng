@@ -85,7 +85,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_process() {
+    fn test_process_transactions() {
         let transaction_1 = Transaction::new(TransactionType::Deposit, 1, 1, 1.0);
         let transaction_2 = Transaction::new(TransactionType::Deposit, 2, 2, 2.0);
         let transaction_3 = Transaction::new(TransactionType::Deposit, 1, 3, 2.0);
@@ -128,5 +128,44 @@ mod tests {
                 is_locked: false
             }
         );
+    }
+
+    #[test]
+    fn test_process_dispute_event() {
+        let mut account = Account::new(1);
+
+        let mut transaction = Transaction::new(TransactionType::Deposit, 1, 1, 1.0);
+        transaction.events = vec![EventType::Dispute];
+
+        let res = process_events(&mut transaction, &mut account);
+        assert!(res.is_ok());
+
+        assert_eq!(transaction.status, TransactionStatus::Disputed);
+    }
+
+    #[test]
+    fn test_process_resolve_event() {
+        let mut account = Account::new(1);
+
+        let mut transaction = Transaction::new(TransactionType::Deposit, 1, 1, 1.0);
+        transaction.events = vec![EventType::Dispute, EventType::Resolve];
+
+        let res = process_events(&mut transaction, &mut account);
+        assert!(res.is_ok());
+
+        assert_eq!(transaction.status, TransactionStatus::Resolved);
+    }
+
+    #[test]
+    fn test_process_chargeback_event() {
+        let mut account = Account::new(1);
+
+        let mut transaction = Transaction::new(TransactionType::Deposit, 1, 1, 1.0);
+        transaction.events = vec![EventType::Dispute, EventType::Chargeback];
+
+        let res = process_events(&mut transaction, &mut account);
+        assert!(res.is_ok());
+
+        assert_eq!(transaction.status, TransactionStatus::Reversed);
     }
 }
