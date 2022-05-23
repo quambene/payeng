@@ -68,7 +68,7 @@ Client accounts are stored in the business object `Account`. Since client accoun
 
 Correctness and completeness is ensured by exhaustive unit testing. Test data are included in the tests itself or in the `test_data` directory. Run all tests as described above.
 
-The input format and data type of the `transactions.csv` file is ensured via the helper type `CheckedTransaction`.
+The input format and data types of the `transactions.csv` file are validated via the helper type `CheckedTransaction`.
 
 Errors are parsed to stderr via `anyhow`. If an error occurs processing is aborted; the output file will remain empty. Safety relevant errors are handled by typed errors via `thiserror`. Error scenarios are validated by `match`ing the relevant error type in unit testing.
 
