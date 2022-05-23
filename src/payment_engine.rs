@@ -1,3 +1,9 @@
+mod postprocessing;
+mod preprocessing;
+
+pub use postprocessing::postprocess;
+pub use preprocessing::preprocess;
+
 use crate::{
     errors::FormatError,
     models::{Account, EventType, Transaction, TransactionStatus, TransactionType},
@@ -167,5 +173,51 @@ mod tests {
         assert!(res.is_ok());
 
         assert_eq!(transaction.status, TransactionStatus::Reversed);
+    }
+
+    #[test]
+    fn test_process_transactions_and_events() {
+        let transaction_1 = Transaction::new(TransactionType::Deposit, 1, 1, 1.0);
+        let transaction_2 = Transaction::new(TransactionType::Deposit, 2, 2, 2.0);
+        let transaction_3 = Transaction::new(TransactionType::Deposit, 1, 3, 2.0);
+        let transaction_4 = Transaction::new(TransactionType::Withdrawal, 1, 4, 1.5);
+        let transaction_5 = Transaction::new(TransactionType::Withdrawal, 2, 5, 2.0);
+
+        let transaction_history = [1, 2, 3, 4, 5];
+
+        let mut transactions: HashMap<u32, Transaction> = HashMap::new();
+        transactions.insert(1, transaction_1);
+        transactions.insert(2, transaction_2);
+        transactions.insert(3, transaction_3);
+        transactions.insert(4, transaction_4);
+        transactions.insert(5, transaction_5);
+
+        let res = process_transactions(&transaction_history, &mut transactions);
+        assert!(res.is_ok());
+
+        let accounts = res.unwrap();
+        assert!(accounts.get(&1).is_some());
+        assert!(accounts.get(&2).is_some());
+
+        assert_eq!(
+            accounts.get(&1).unwrap(),
+            &Account {
+                client_id: 1,
+                available_amount: 1.5,
+                held_amount: 0.0,
+                total_amount: 1.5,
+                is_locked: false
+            }
+        );
+        assert_eq!(
+            accounts.get(&2).unwrap(),
+            &Account {
+                client_id: 2,
+                available_amount: 0.0,
+                held_amount: 0.0,
+                total_amount: 0.0,
+                is_locked: false
+            }
+        );
     }
 }

@@ -21,7 +21,7 @@ pub enum TransactionStatus {
     Reversed,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Transaction {
     pub transaction_type: TransactionType,
     pub client_id: u16,
@@ -44,6 +44,25 @@ impl Transaction {
             transaction_id,
             amount,
             events: vec![],
+            status: TransactionStatus::Initiated,
+        }
+    }
+
+    // Used in tests
+    #[allow(dead_code)]
+    pub fn with_events(
+        transaction_type: TransactionType,
+        client_id: u16,
+        transaction_id: u32,
+        amount: f64,
+        events: Vec<EventType>,
+    ) -> Self {
+        Self {
+            transaction_type,
+            client_id,
+            transaction_id,
+            amount,
+            events,
             status: TransactionStatus::Initiated,
         }
     }

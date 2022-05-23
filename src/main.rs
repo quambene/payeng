@@ -4,10 +4,7 @@ mod models;
 mod payment_engine;
 
 use anyhow::anyhow;
-use std::{
-    env,
-    fs::{self, File},
-};
+use std::{env, fs::File};
 
 /*
     Output is parsed to stdout
@@ -33,14 +30,20 @@ fn main() -> Result<(), anyhow::Error> {
 
 // Thin wrapper for testing
 fn wrapper(csv_file: &str) -> Result<(), anyhow::Error> {
-    // Read from file and convert RawTransactions to business objects
-    let (transaction_history, mut transactions) = csv::read(csv_file)?;
+    // Read raw transactions from file
+    let raw_transactions = csv::read(csv_file)?;
+
+    // Prepare transactions for processing and convert raw transactions to business objects
+    let (transaction_history, mut transactions) = payment_engine::preprocess(raw_transactions)?;
 
     // Process all transactions
     let accounts = payment_engine::process_transactions(&transaction_history, &mut transactions)?;
 
-    // Convert business objects from Account to RawAccount and write to stdout in csv format
-    let res = csv::write(accounts);
+    // Convert business objects from Account to RawAccount
+    let raw_accounts = payment_engine::postprocess(accounts)?;
+
+    // Write raw accounts to stdout in csv format
+    let res = csv::write(raw_accounts);
 
     // Revert state if error occurs to prevent incomplete state
     match res {
@@ -110,11 +113,5 @@ mod tests {
     fn test_wrapper_deserialize_error() {
         let res = wrapper("test_data/transactions_deserialize_error.csv");
         assert!(res.is_err());
-
-        let err = res.unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "CSV deserialize error: record 1 (line: 2, byte: 43): field 3: invalid float literal"
-        );
     }
 }
