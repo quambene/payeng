@@ -51,9 +51,9 @@ Processing of transactions is divided into 5 steps:
 4. **Postprocessing**: Convert business objects to raw accounts
 5. **Write to csv**: Write raw accounts to stdout in csv format
 
-The core steps 2 to 4 are handled in module `payment_engine`. Reading and writing csv files (step 1 and 5) is handled in module `csv`.
+The core steps 2 to 4 are handled in module `payment_engine`. Reading and writing csv files (step 1 and 5) are handled in module `csv`.
 
-Transactions are subdivided into
+Raw transactions are subdivided into
 
 - `Transaction`s (deposit, withdrawal), and
 - `TransactionEvent`s (dispute, resolve, chargeback) which affect existing  `Transaction`s
