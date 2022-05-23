@@ -3,9 +3,9 @@ use crate::{
     errors::FormatError,
     models::{round, CheckedTransaction, EventType, TransactionEvent, TransactionType},
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RawTransaction {
     pub r#type: String,
     pub client: u16,
