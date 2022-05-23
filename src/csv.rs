@@ -10,7 +10,7 @@ pub fn read(csv_file: &str) -> Result<Vec<RawTransaction>, anyhow::Error> {
 
     let mut raw_transactions = vec![];
 
-    // Read from file an deserialize to RawTransaction type
+    // Read from file and deserialize to RawTransaction type
     for record in csv_reader.deserialize() {
         let raw_transaction: RawTransaction = record?;
         raw_transactions.push(raw_transaction);
