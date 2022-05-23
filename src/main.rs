@@ -4,7 +4,10 @@ mod models;
 mod payment_engine;
 
 use anyhow::anyhow;
-use std::env;
+use std::{
+    env,
+    fs::{self, File},
+};
 
 /*
     Output is parsed to stdout
@@ -37,7 +40,16 @@ fn wrapper(csv_file: &str) -> Result<(), anyhow::Error> {
     let accounts = payment_engine::process_transactions(&transaction_history, &mut transactions)?;
 
     // Convert business objects from Account to RawAccount and write to stdout in csv format
-    csv::write(accounts)?;
+    let res = csv::write(accounts);
+
+    // Revert state if error occurs to prevent incomplete state
+    match res {
+        Ok(_) => (),
+        Err(_) => {
+            let file = File::open("accounts.csv")?;
+            file.set_len(0)?;
+        }
+    }
 
     Ok(())
 }
