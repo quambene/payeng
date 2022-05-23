@@ -116,9 +116,13 @@ impl Account {
                 // Ignore chargeback if transaction isn't under dispute
                 if tx.status == TransactionStatus::Disputed {
                     match tx.transaction_type {
-                        TransactionType::Deposit => self.chargeback_deposit(tx),
-                        TransactionType::Withdrawal => self.chargeback_withdrawal(tx),
-                    }
+                        TransactionType::Deposit => self.chargeback_deposit(tx)?,
+                        TransactionType::Withdrawal => self.chargeback_withdrawal(tx)?,
+                    };
+
+                    // Freeze account when charge chargeback occurs
+                    self.freeze();
+                    Ok(())
                 } else {
                     Ok(())
                 }
@@ -169,9 +173,8 @@ impl Account {
 
     fn chargeback_deposit(&mut self, tx: &Transaction) -> Result<(), ChargebackError> {
         if self.client_id == tx.client_id {
-            self.available_amount -= tx.amount;
-            self.held_amount += tx.amount;
-            self.total_amount += tx.amount;
+            self.held_amount -= tx.amount;
+            self.total_amount -= tx.amount;
             Ok(())
         } else {
             Err(ChargebackError::InvalidClientId)
@@ -180,9 +183,8 @@ impl Account {
 
     fn chargeback_withdrawal(&mut self, tx: &Transaction) -> Result<(), ChargebackError> {
         if self.client_id == tx.client_id {
-            self.available_amount += tx.amount;
-            self.held_amount -= tx.amount;
-            self.total_amount -= tx.amount;
+            self.held_amount += tx.amount;
+            self.total_amount += tx.amount;
             Ok(())
         } else {
             Err(ChargebackError::InvalidClientId)
@@ -405,12 +407,52 @@ mod tests {
     #[test]
     fn test_chargeback_deposit() {
         let mut account = Account::new(1);
-        todo!()
+
+        let mut transaction = Transaction::new(TransactionType::Deposit, 1, 1, 25.0);
+        account.deposit(&transaction).unwrap();
+        account.dispute(&transaction, &EventType::Dispute).unwrap();
+        transaction.disputed();
+
+        let res = account.chargeback(&transaction, &EventType::Chargeback);
+        assert!(res.is_ok());
+        assert_eq!(
+            account,
+            Account {
+                client_id: 1,
+                available_amount: 0.0,
+                held_amount: 0.0,
+                total_amount: 0.0,
+                is_locked: true,
+            }
+        );
     }
 
     #[test]
     fn test_chargeback_withdrawal() {
         let mut account = Account::new(1);
-        todo!()
+
+        let deposit_transaction = Transaction::new(TransactionType::Deposit, 1, 1, 25.0);
+        account.deposit(&deposit_transaction).unwrap();
+
+        let mut withdraw_transaction = Transaction::new(TransactionType::Withdrawal, 1, 2, 15.0);
+        account.withdraw(&withdraw_transaction).unwrap();
+
+        account
+            .dispute(&withdraw_transaction, &EventType::Dispute)
+            .unwrap();
+        withdraw_transaction.disputed();
+
+        let res = account.chargeback(&withdraw_transaction, &EventType::Chargeback);
+        assert!(res.is_ok());
+        assert_eq!(
+            account,
+            Account {
+                client_id: 1,
+                available_amount: 25.0,
+                held_amount: 0.0,
+                total_amount: 25.0,
+                is_locked: true
+            }
+        );
     }
 }

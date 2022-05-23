@@ -70,7 +70,6 @@ fn process_events(tx: &mut Transaction, account: &mut Account) -> Result<(), any
                     // Ignore chargeback if transaction isn't under dispute
                     if tx.status == TransactionStatus::Disputed {
                         account.chargeback(tx, event)?;
-                        account.freeze();
                         tx.status = TransactionStatus::Reversed;
                     }
                 }
