@@ -58,7 +58,7 @@ Raw transactions are subdivided into
 - `Transaction`s (deposit, withdrawal), and
 - `TransactionEvent`s (dispute, resolve, chargeback) which affect existing  `Transaction`s
 
-The business object `Transaction` includes its transaction events as attribute.
+The business object `Transaction` includes its time-ordered transaction events as attribute.
 
 Furthermore, the `transaction_history` includes all transactions IDs in chronological order. To prevent expensive searching in the transaction history, all transactions are saved in a `HashMap`.
 
