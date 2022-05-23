@@ -89,23 +89,19 @@ fn process_events(tx: &mut Transaction, account: &mut Account) -> Result<(), any
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{models::RawTransaction, payment_engine};
 
     #[test]
     fn test_process_transactions() {
-        let transaction_1 = Transaction::new(TransactionType::Deposit, 1, 1, 1.0);
-        let transaction_2 = Transaction::new(TransactionType::Deposit, 2, 2, 2.0);
-        let transaction_3 = Transaction::new(TransactionType::Deposit, 1, 3, 2.0);
-        let transaction_4 = Transaction::new(TransactionType::Withdrawal, 1, 4, 1.5);
-        let transaction_5 = Transaction::new(TransactionType::Withdrawal, 2, 5, 2.0);
-
-        let transaction_history = [1, 2, 3, 4, 5];
-
-        let mut transactions: HashMap<u32, Transaction> = HashMap::new();
-        transactions.insert(1, transaction_1);
-        transactions.insert(2, transaction_2);
-        transactions.insert(3, transaction_3);
-        transactions.insert(4, transaction_4);
-        transactions.insert(5, transaction_5);
+        let raw_transactions: Vec<RawTransaction> = vec![
+            RawTransaction::new(String::from("deposit"), 1, 1, Some(1.0)),
+            RawTransaction::new(String::from("deposit"), 2, 2, Some(2.0)),
+            RawTransaction::new(String::from("deposit"), 1, 3, Some(2.0)),
+            RawTransaction::new(String::from("withdrawal"), 1, 4, Some(1.5)),
+            RawTransaction::new(String::from("withdrawal"), 2, 5, Some(2.0)),
+        ];
+        let (transaction_history, mut transactions) =
+            payment_engine::preprocess(raw_transactions).unwrap();
 
         let res = process_transactions(&transaction_history, &mut transactions);
         assert!(res.is_ok());
@@ -122,6 +118,49 @@ mod tests {
                 held_amount: 0.0,
                 total_amount: 1.5,
                 is_locked: false
+            }
+        );
+        assert_eq!(
+            accounts.get(&2).unwrap(),
+            &Account {
+                client_id: 2,
+                available_amount: 0.0,
+                held_amount: 0.0,
+                total_amount: 0.0,
+                is_locked: false
+            }
+        );
+    }
+
+    #[test]
+    fn test_process_transactions_and_events() {
+        let raw_transactions: Vec<RawTransaction> = vec![
+            RawTransaction::new(String::from("deposit"), 1, 1, Some(1.0)),
+            RawTransaction::new(String::from("deposit"), 2, 2, Some(2.0)),
+            RawTransaction::new(String::from("deposit"), 1, 3, Some(2.0)),
+            RawTransaction::new(String::from("withdrawal"), 1, 4, Some(1.5)),
+            RawTransaction::new(String::from("dispute"), 1, 4, None),
+            RawTransaction::new(String::from("chargeback"), 1, 4, None),
+            RawTransaction::new(String::from("withdrawal"), 2, 5, Some(2.0)),
+        ];
+        let (transaction_history, mut transactions) =
+            payment_engine::preprocess(raw_transactions).unwrap();
+
+        let res = process_transactions(&transaction_history, &mut transactions);
+        assert!(res.is_ok());
+
+        let accounts = res.unwrap();
+        assert!(accounts.get(&1).is_some());
+        assert!(accounts.get(&2).is_some());
+
+        assert_eq!(
+            accounts.get(&1).unwrap(),
+            &Account {
+                client_id: 1,
+                available_amount: 3.0,
+                held_amount: 0.0,
+                total_amount: 3.0,
+                is_locked: true
             }
         );
         assert_eq!(
@@ -173,51 +212,5 @@ mod tests {
         assert!(res.is_ok());
 
         assert_eq!(transaction.status, TransactionStatus::Reversed);
-    }
-
-    #[test]
-    fn test_process_transactions_and_events() {
-        let transaction_1 = Transaction::new(TransactionType::Deposit, 1, 1, 1.0);
-        let transaction_2 = Transaction::new(TransactionType::Deposit, 2, 2, 2.0);
-        let transaction_3 = Transaction::new(TransactionType::Deposit, 1, 3, 2.0);
-        let transaction_4 = Transaction::new(TransactionType::Withdrawal, 1, 4, 1.5);
-        let transaction_5 = Transaction::new(TransactionType::Withdrawal, 2, 5, 2.0);
-
-        let transaction_history = [1, 2, 3, 4, 5];
-
-        let mut transactions: HashMap<u32, Transaction> = HashMap::new();
-        transactions.insert(1, transaction_1);
-        transactions.insert(2, transaction_2);
-        transactions.insert(3, transaction_3);
-        transactions.insert(4, transaction_4);
-        transactions.insert(5, transaction_5);
-
-        let res = process_transactions(&transaction_history, &mut transactions);
-        assert!(res.is_ok());
-
-        let accounts = res.unwrap();
-        assert!(accounts.get(&1).is_some());
-        assert!(accounts.get(&2).is_some());
-
-        assert_eq!(
-            accounts.get(&1).unwrap(),
-            &Account {
-                client_id: 1,
-                available_amount: 1.5,
-                held_amount: 0.0,
-                total_amount: 1.5,
-                is_locked: false
-            }
-        );
-        assert_eq!(
-            accounts.get(&2).unwrap(),
-            &Account {
-                client_id: 2,
-                available_amount: 0.0,
-                held_amount: 0.0,
-                total_amount: 0.0,
-                is_locked: false
-            }
-        );
     }
 }
