@@ -80,7 +80,7 @@ Performance gets problematic beginning at approximately a few million lines in t
 
 For example, the file size is approximately 2GB for 100 million lines. This space complexity can be handled by chunk-wise processing of the input file. One strategy is to preload all transaction events (dispute, resolve, chargeback) in a lookup table as searching all chunks for the referenced transactions would otherwise be quite slow. The assumption here being that transaction events do not occur as often as deposit and withdrawal transactions.
 
-The version with chunk-wise processing can be found on branch `performance`:
+The incomplete version with chunk-wise processing can be found on branch `performance`:
 
 ``` bash
 git checkout performance
